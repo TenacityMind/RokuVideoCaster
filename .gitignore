@@ -1,0 +1,33 @@
+# Binaries & build artifacts
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+dist/
+
+# Roku Channel packages
+*.zip
+!internal/roku/channel.zip
+
+# Local environment and private user configs
+.env
+.env.local
+config.local.json
+device_config.json
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log

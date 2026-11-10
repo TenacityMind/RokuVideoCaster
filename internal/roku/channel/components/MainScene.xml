@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene">
+  <interface>
+    <field id="args" type="assocarray" onChange="onArgs" />
+  </interface>
+  <children>
+    <!-- Background for Dashboard / Idle Screen -->
+    <Rectangle id="bg" width="1920" height="1080" color="0x090b10FF" />
+
+    <!-- Cinematic Dashboard UI (Shown when idle) -->
+    <Group id="dashboard" visible="true">
+      <Poster id="logo" uri="pkg:/images/icon_focus_fhd.png" width="240" height="180" translation="[840, 160]" />
+      <Label text="Roku Video Caster" horizAlign="center" width="1920" translation="[0, 370]" font="font:LargeBoldSystemFont" color="0x38bdf8FF" />
+      <Label id="statusLabel" text="● Ready to Cast" horizAlign="center" width="1920" translation="[0, 430]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
+
+      <!-- Modern Frosted Glass Card -->
+      <Rectangle width="900" height="260" translation="[510, 500]" color="0x121620EE">
+        <Label text="Open the Web Dashboard on your computer or phone:&#xA;http://localhost:8080&#xA;&#xA;Direct passthrough enabled for 4K UHD, Dolby Atmos &amp; Subtitles" horizAlign="center" width="860" height="180" translation="[20, 35]" font="font:MediumSystemFont" color="0xe2e8f0FF" wrap="true" />
+        <Label id="deviceInfo" text="Roku TV Native Engine • Version 2.0" horizAlign="center" width="860" translation="[20, 205]" font="font:SmallSystemFont" color="0x94a3b8FF" />
+      </Rectangle>
+    </Group>
+
+    <!-- Fullscreen Video Player -->
+    <Video id="video" width="1920" height="1080" visible="false" />
+
+    <!-- Subtitle Overlay (Bottom Center, High Contrast) -->
+    <Group id="subtitleGroup" visible="false">
+      <Label id="subtitleShadow" text="" horizAlign="center" vertAlign="bottom" width="1640" height="180" translation="[142, 832]" font="font:LargeBoldSystemFont" color="0x000000FF" wrap="true" maxLines="3" />
+      <Label id="subtitleLabel" text="" horizAlign="center" vertAlign="bottom" width="1640" height="180" translation="[140, 830]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" wrap="true" maxLines="3" />
+    </Group>
+
+    <!-- Subtitle Sync Quick Toast (Up/Down remote keys) -->
+    <Group id="subSyncOSD" visible="false">
+      <Rectangle width="400" height="60" translation="[760, 60]" color="0x090b10F0">
+        <Label id="subSyncLabel" text="Sub Sync: 0.0s" horizAlign="center" vertAlign="center" width="400" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" />
+      </Rectangle>
+    </Group>
+    <Timer id="subSyncTimer" repeat="false" duration="2" />
+
+    <!-- Subtitle position timer (checks every 250ms to update subtitle display) -->
+    <Timer id="subtitleTimer" repeat="true" duration="0.25" />
+
+    <!-- ============================================================ -->
+    <!-- INTERACTIVE ON-SCREEN DISPLAY (OSD) - Triggered by Remote OK -->
+    <!-- ============================================================ -->
+    <Group id="osd" visible="false">
+      
+      <!-- Top Vignette and Cinematic Header -->
+      <Rectangle width="1920" height="140" translation="[0, 0]" color="0x090b10D9" />
+      <Label id="osdTitle" text="NOW PLAYING" translation="[80, 40]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="1200" />
+      <Label id="osdRemaining" text="-00:00:00" translation="[1440, 40]" font="font:LargeBoldSystemFont" color="0xfbbf24FF" horizAlign="right" width="400" />
+      <Label id="osdRemainingTag" text="TIME REMAINING" translation="[1440, 85]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="400" />
+
+      <!-- Bottom Interactive Control Deck -->
+      <Rectangle width="1920" height="240" translation="[0, 840]" color="0x090b10E6" />
+
+      <!-- Scrubber Timeline -->
+      <Label id="osdCurrentTime" text="00:00:00" translation="[80, 865]" font="font:MediumBoldSystemFont" color="0xe2e8f0FF" width="160" />
+      <Rectangle id="progressBarBg" width="1480" height="8" translation="[220, 878]" color="0x334155FF">
+        <Rectangle id="progressBarFill" width="0" height="8" translation="[0, 0]" color="0x38bdf8FF" />
+      </Rectangle>
+      <Label id="osdTotalDuration" text="00:00:00" translation="[1720, 865]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="120" />
+
+      <!-- Remote Focusable Pills -->
+      <Group id="osdPills" translation="[80, 915]">
+        <!-- Pill 1: Subtitle Sync Adjustment -->
+        <Rectangle id="pillSync" width="360" height="52" translation="[0, 0]" color="0x38bdf8FF">
+          <Label id="pillSyncLabel" text="💬 Sub Sync: 0.0s [◀ / ▶]" horizAlign="center" vertAlign="center" width="360" height="52" font="font:SmallBoldSystemFont" color="0x090b10FF" />
+        </Rectangle>
+
+        <!-- Pill 2: Subtitle Styling (Size & Color) -->
+        <Rectangle id="pillStyle" width="280" height="52" translation="[380, 0]" color="0x1e293bCC">
+          <Label id="pillStyleLabel" text="🎨 Text: White Large" horizAlign="center" vertAlign="center" width="280" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        </Rectangle>
+
+        <!-- Pill 3: Audio Track Switcher -->
+        <Rectangle id="pillAudio" width="280" height="52" translation="[680, 0]" color="0x1e293bCC">
+          <Label id="pillAudioLabel" text="🔊 Audio: Track 1" horizAlign="center" vertAlign="center" width="280" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        </Rectangle>
+
+        <!-- Pill 4: Subtitles Toggle On/Off -->
+        <Rectangle id="pillToggle" width="220" height="52" translation="[980, 0]" color="0x1e293bCC">
+          <Label id="pillToggleLabel" text="✓ Subs: ON" horizAlign="center" vertAlign="center" width="220" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        </Rectangle>
+
+        <!-- Pill 5: Up Next / Playlist -->
+        <Rectangle id="pillQueue" width="300" height="52" translation="[1220, 0]" color="0x1e293bCC">
+          <Label id="pillQueueLabel" text="📑 Next in Queue ▶" horizAlign="center" vertAlign="center" width="300" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        </Rectangle>
+      </Group>
+
+      <!-- Remote Control Legend Helper -->
+      <Label id="osdHint" text="[OK] Close Menu   •   [◀ / ▶] Change Value / Seek   •   [▲ / ▼] Switch Setting" translation="[80, 995]" font="font:SmallSystemFont" color="0x94a3b8FF" width="1760" horizAlign="center" />
+    </Group>
+
+    <!-- Auto-hide Timer for OSD (disappears after 6s of inactivity) -->
+    <Timer id="osdTimer" repeat="false" duration="6" />
+
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+</component>

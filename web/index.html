@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roku Video Caster V2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #090b10;
+      --card-bg: #121620;
+      --card-border: #1e2638;
+      --text-main: #f1f5f9;
+      --text-sub: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #6366f1;
+      --success: #10b981;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .active-nav-tab {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-3 md:p-6 lg:p-8 flex flex-col justify-between">
+
+  <div class="max-w-5xl mx-auto w-full space-y-6">
+
+    <!-- TOP APP BAR -->
+    <header class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/25 text-white font-black text-xl">
+          R
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white flex items-center gap-2">
+            Roku Video Caster <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-sky-400 border border-slate-700 font-semibold">V2.0 PRO</span>
+          </h1>
+          <p class="text-xs text-slate-400">Direct Hardware Passthrough • Local & Online Media</p>
+        </div>
+      </div>
+
+      <!-- TV Target Pill with Quick Connection Modal Trigger -->
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDeviceModal()" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all text-xs shadow-sm">
+          <span id="headerStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="headerDeviceName" class="font-medium text-slate-200">Checking TV...</span>
+          <span id="headerDeviceIp" class="font-mono text-slate-500 text-[11px]">...</span>
+          <span class="text-slate-400 text-[10px]">⚙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN APP DASHBOARD -->
+    <main id="appView" class="space-y-6">
+
+      <!-- Navigation Segment Tabs -->
+      <nav class="flex border-b border-slate-800 gap-2">
+        <button id="tabLocal" onclick="selectTab('local')" class="px-5 py-2.5 text-xs font-semibold rounded-t-xl border-b-2 flex items-center gap-2 transition-all active-nav-tab border-sky-400">
+          <span>📁</span> Personal Local Files
+        </button>
+        <button id="tabWeb" onclick="selectTab('web')" class="px-5 py-2.5 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition-all">
+          <span>🌐</span> Online Video Link
+        </button>
+        <button id="tabQueue" onclick="selectTab('queue')" class="px-5 py-2.5 text-xs font-semibold rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition-all">
+          <span>📑</span> Playlist Queue <span id="queueBadge" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-slate-400">0</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: PERSONAL LOCAL FILES -->
+      <section id="panelLocal" class="space-y-6">
+        
+        <!-- Drag & Drop Zone -->
+        <div id="dropZone" onclick="triggerFilePick()" class="border-2 border-dashed border-slate-700/80 hover:border-sky-500/80 bg-slate-900/40 hover:bg-slate-900/70 rounded-2xl p-8 text-center cursor-pointer transition-all space-y-3">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-2xl text-sky-400 shadow-inner">
+            🎬
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Select or drop your movie or video file here</h3>
+            <p class="text-xs text-slate-400 mt-1">Supports MKV, MP4, M4V, MOV, WEBM • Zero local transcoding</p>
+          </div>
+          <button type="button" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700">
+            Browse Video File
+          </button>
+          <input type="file" id="localFileInput" accept=".mp4,.mkv,.m4v,.mov,.webm" class="hidden" onchange="onFileSelected(event)">
+        </div>
+
+        <!-- Detected Local Media Details & Multi-Track Controls -->
+        <div id="localMediaCard" class="hidden bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-lg">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-lg">
+                🍿
+              </div>
+              <div>
+                <h4 id="localFileName" class="text-sm font-bold text-white truncate max-w-md">Video File</h4>
+                <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                  <span id="localResolution" class="text-sky-400 font-mono">1080p FHD</span>
+                  <span>•</span>
+                  <span id="localFileSize">0 MB</span>
+                </div>
+              </div>
+            </div>
+            <span class="self-start sm:self-center px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold">
+              ✓ Direct Hardware Stream Ready
+            </span>
+          </div>
+
+          <!-- Multi-Track Config Grid: Audio Tracks + Subtitles -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Audio Track Selector -->
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>🔊</span> Audio Stream Track
+                </label>
+                <span id="audioTrackCount" class="text-[10px] text-sky-400 font-mono">Tracks Found</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Select multi-channel surround or alternate language:</p>
+              <select id="audioTrackSelect" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500">
+                <option value="0">Track 1: Primary Audio (Direct Passthrough)</option>
+              </select>
+            </div>
+
+            <!-- Subtitles Selector & Local Upload -->
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>💬</span> Subtitle Selection
+                </label>
+                <span class="text-[10px] text-emerald-400 font-mono">Embedded + Local</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Pick embedded subtitle or upload your own file:</p>
+              <select id="subTrackSelect" onchange="onSubTrackChange()" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-sky-500">
+                <option value="none">None (Turn Off Subtitles)</option>
+                <option value="upload">+ Upload Local .SRT / .VTT File...</option>
+              </select>
+
+              <!-- Local Subtitle File Upload Area -->
+              <div id="subUploadBox" class="hidden mt-2 p-3 border border-dashed border-sky-500/40 bg-sky-500/5 rounded-lg flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="text-sky-400">📄</span>
+                  <div>
+                    <div id="subFileName" class="font-medium text-slate-200">No file chosen</div>
+                    <div class="text-[10px] text-slate-400">Local subtitle loaded • Ready to sync</div>
+                  </div>
+                </div>
+                <button type="button" onclick="pickLocalSub()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] text-sky-400 border border-slate-700">
+                  Choose File
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-3 pt-2">
+            <button onclick="castCurrentLocal()" class="flex-1 py-3 bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-300 hover:to-indigo-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2">
+              <span>▶</span> Cast Local Video to Roku TV
+            </button>
+            <button onclick="addCurrentLocalToQueue()" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-all">
+              + Add to Playlist
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: ONLINE VIDEO LINK -->
+      <section id="panelWeb" class="hidden space-y-6">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+              <span>🔗</span> Stream Link Extractor
+            </h3>
+            <span class="text-xs text-slate-400">Automatic Quality & Subtitle Discovery</span>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="webStreamUrl" class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-sky-500" placeholder="Paste video link (e.g. .m3u8, .mp4, or web page)...">
+            <button onclick="analyzeWebLink()" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow transition-all">
+              Analyze Link
+            </button>
+          </div>
+
+          <!-- Quality Selection Chips -->
+          <div id="webCandidatesSection" class="hidden pt-3 border-t border-slate-800/80 space-y-2">
+            <label class="text-[11px] font-semibold text-slate-300">Select Stream Quality to Cast:</label>
+            <div id="webCandidatesGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            </div>
+          </div>
+
+          <!-- Subtitle Source Section (Optional Fallback) -->
+          <div class="pt-3 border-t border-slate-800/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                <span>💬</span> Subtitles (Optional)
+              </label>
+              <div id="webSubStatusBadge" class="flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                Ready to configure
+              </div>
+            </div>
+
+            <!-- Subtitle Mode Tabs -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <button type="button" id="subModeBtnUpload" onclick="setWebSubMode('upload')" class="p-2.5 rounded-xl border border-sky-500/50 bg-sky-500/10 text-sky-300 font-medium text-left transition-all">
+                <div class="text-[11px] font-bold text-white flex items-center gap-1">📁 Upload File</div>
+                <div class="text-[9px] text-slate-400">Local .SRT or .VTT</div>
+              </button>
+
+              <button type="button" id="subModeBtnUrl" onclick="setWebSubMode('url')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 text-slate-400 font-medium text-left hover:border-slate-700 transition-all">
+                <div class="text-[11px] font-bold text-slate-200 flex items-center gap-1">🔗 Subtitle URL</div>
+                <div class="text-[9px] text-slate-400">Direct .srt link</div>
+              </button>
+
+              <button type="button" id="subModeBtnAuto" onclick="setWebSubMode('auto')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 text-slate-400 font-medium text-left hover:border-slate-700 transition-all">
+                <div class="text-[11px] font-bold text-slate-200 flex items-center gap-1">🌐 Web Scraper</div>
+                <div class="text-[9px] text-slate-400">Discovered subs</div>
+              </button>
+
+              <button type="button" id="subModeBtnOff" onclick="setWebSubMode('off')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 text-slate-400 font-medium text-left hover:border-slate-700 transition-all">
+                <div class="text-[11px] font-bold text-slate-200 flex items-center gap-1">✕ None</div>
+                <div class="text-[9px] text-slate-400">Play without subs</div>
+              </button>
+            </div>
+
+            <!-- Mode 1: Upload File -->
+            <div id="webSubBoxUpload" class="p-3 border border-dashed border-sky-500/40 bg-sky-500/5 rounded-xl flex items-center justify-between text-xs">
+              <div class="flex items-center gap-3">
+                <span class="text-xl text-sky-400">📄</span>
+                <div>
+                  <div id="webUploadedSubName" class="font-bold text-slate-200">No subtitle chosen</div>
+                  <div class="text-[10px] text-slate-400">Subtitle will be streamed and synced directly onto TV</div>
+                </div>
+              </div>
+              <button type="button" onclick="pickWebLocalSub()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs text-sky-400 border border-slate-700 font-semibold transition-all">
+                Choose .SRT / .VTT
+              </button>
+            </div>
+
+            <!-- Mode 2: Subtitle URL -->
+            <div id="webSubBoxUrl" class="hidden space-y-1.5">
+              <div class="flex gap-2">
+                <input type="text" id="webSubCustomUrl" placeholder="https://example.com/subtitles/english.srt" class="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-sky-500">
+              </div>
+              <p class="text-[10px] text-slate-400">Supports direct URLs from OpenSubtitles, Subscene, or raw CDN links.</p>
+            </div>
+
+            <!-- Mode 3: Scraped Subs -->
+            <div id="webSubBoxAuto" class="hidden p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs space-y-2">
+              <div class="text-slate-400 text-[11px]">Subtitles detected from stream page:</div>
+              <select id="webScrapedSubSelect" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white">
+                <option value="">No discovered subtitles found</option>
+              </select>
+            </div>
+
+            <!-- Mode 4: Off -->
+            <div id="webSubBoxOff" class="hidden p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl text-xs text-slate-400">
+              Subtitles disabled. The video will cast without caption overlays.
+            </div>
+
+          </div>
+
+          <div class="flex items-center gap-3 pt-2">
+            <button onclick="castCurrentWeb()" class="flex-1 py-3 bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-300 hover:to-indigo-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+              <span>▶</span> Cast Stream Link to Roku TV
+            </button>
+            <button onclick="addCurrentWebToQueue()" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-all">
+              + Add to Playlist
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PLAYLIST QUEUE -->
+      <section id="panelQueue" class="hidden space-y-4">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white">Continuous Playlist</h3>
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" id="autoAdvanceCheckbox" onchange="toggleAutoAdvance()" checked class="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0">
+              <span>Auto-play next video on finish</span>
+            </label>
+          </div>
+
+          <div class="space-y-2" id="queueList">
+            <div class="p-6 text-center text-xs text-slate-500">
+              Playlist queue is empty. Add videos from Local Files or Online Video Link.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOCKED BOTTOM CONTROLLER -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-[220px]">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-base">
+            ▶
+          </div>
+          <div>
+            <div id="dockTitle" class="text-xs font-bold text-white truncate max-w-[200px]">Roku Video Caster Ready</div>
+            <div id="dockMeta" class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+              <span class="px-1.5 py-0.2 rounded bg-slate-800 text-sky-400 font-mono">Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Remote Transport -->
+        <div class="flex items-center gap-2">
+          <button onclick="sendRemoteKey('rev')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">⏮ 15s</button>
+          <button onclick="sendRemoteKey('play')" class="px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-xs">Play / Pause</button>
+          <button onclick="sendRemoteKey('fwd')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold border border-slate-700">15s ⏭</button>
+          <button onclick="sendRemoteKey('ok')" class="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg text-xs font-semibold border border-indigo-500/30">
+            TV Menu (OK)
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- DEVICE CONNECTION SETTINGS MODAL -->
+  <div id="deviceModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📺</span> Roku TV Connection Settings
+        </h3>
+        <button onclick="toggleDeviceModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Roku TV IP Address</label>
+          <div class="flex gap-2">
+            <input type="text" id="modalIp" class="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl font-mono text-white focus:outline-none focus:border-sky-500" placeholder="192.168.1.50">
+            <button onclick="testDeviceConnection()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 font-semibold">
+              Test Ping
+            </button>
+          </div>
+        </div>
+
+        <div id="modalPingResult" class="hidden p-3 rounded-xl text-xs flex items-center gap-2">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Roku Developer Password</label>
+          <input type="password" id="modalPassword" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl font-mono text-white focus:outline-none focus:border-sky-500" placeholder="Set on Roku Dev Screen">
+        </div>
+
+        <button onclick="sideloadRokuChannel()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold border border-slate-700 transition-all flex items-center justify-center gap-2">
+          <span>⚡</span> Sideload / Update Channel on TV
+        </button>
+      </div>
+
+      <div class="pt-2">
+        <button onclick="saveDeviceConfig()" class="w-full py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-xl text-xs">
+          Save Settings &amp; Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

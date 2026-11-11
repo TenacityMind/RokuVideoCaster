@@ -143,15 +143,15 @@ sub updateSubtitleDisplay()
         return
     end if
 
-    pos = m.video.position + m.subOffset
+    vidPos = m.video.position + m.subOffset
     currentText = ""
 
     ' Search for active cue
     for each cue in m.cues
-        if pos >= cue.start and pos <= cue.endPos
+        if vidPos >= cue.start and vidPos <= cue.endPos
             currentText = cue.text
             exit for
-        else if pos < cue.start
+        else if vidPos < cue.start
             exit for
         end if
     end for
@@ -163,20 +163,20 @@ sub updateSubtitleDisplay()
 end sub
 
 sub onPositionChange(event as Object)
-    pos = event.getData()
+    vidPos = event.getData()
     dur = m.video.duration
 
     if dur > 0
-        m.osdCurrentTime.text = formatTime(pos)
+        m.osdCurrentTime.text = formatTime(vidPos)
         m.osdTotalDuration.text = formatTime(dur)
 
         ' Time Remaining Countdown (-HH:MM:SS)
-        remSecs = dur - pos
+        remSecs = dur - vidPos
         if remSecs < 0 then remSecs = 0
         m.osdRemaining.text = "-" + formatTime(remSecs)
 
         ' Progress bar calculation (width out of 1480px)
-        ratio = pos / dur
+        ratio = vidPos / dur
         if ratio > 1.0 then ratio = 1.0
         m.progressBarFill.width = Int(ratio * 1480)
     end if

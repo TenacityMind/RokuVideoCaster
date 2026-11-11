@@ -36,7 +36,11 @@ func SideloadChannel(ctx context.Context, host, password string) (*SideloadResul
 		return nil, fmt.Errorf("roku developer password is required")
 	}
 
-	installURL := "http://" + net.JoinHostPort(host, "80") + "/plugin_install"
+	cleanHost := strings.TrimPrefix(strings.TrimPrefix(host, "http://"), "https://")
+	if strings.Contains(cleanHost, ":") {
+		cleanHost, _, _ = net.SplitHostPort(cleanHost)
+	}
+	installURL := "http://" + net.JoinHostPort(cleanHost, "80") + "/plugin_install"
 
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
@@ -57,18 +61,24 @@ func SideloadChannel(ctx context.Context, host, password string) (*SideloadResul
 	reqCtx, cancel := context.WithTimeout(ctx, installTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, installURL, &buf)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
 	client := &http.Client{
 		Transport: &digest.Transport{
 			Username: devUser,
 			Password: password,
 		},
 	}
+
+	// Pre-flight GET request to establish digest nonce before uploading large payload
+	preReq, _ := http.NewRequestWithContext(reqCtx, http.MethodGet, installURL, nil)
+	if preResp, err := client.Do(preReq); err == nil {
+		preResp.Body.Close()
+	}
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, installURL, &buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
 
 	resp, err := client.Do(req)
 	if err != nil {

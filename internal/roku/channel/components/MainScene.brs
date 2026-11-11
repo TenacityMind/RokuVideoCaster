@@ -10,9 +10,17 @@ sub init()
     m.subSyncOSD = m.top.findNode("subSyncOSD")
     m.subSyncLabel = m.top.findNode("subSyncLabel")
     m.subSyncTimer = m.top.findNode("subSyncTimer")
+    m.seekToast = m.top.findNode("seekToast")
+    m.seekToastLabel = m.top.findNode("seekToastLabel")
+    m.seekToastTimer = m.top.findNode("seekToastTimer")
     m.subtitleTimer = m.top.findNode("subtitleTimer")
 
-    ' OSD Nodes
+    ' Configure video seek accuracy
+    if m.video.seekMode <> invalid
+        m.video.seekMode = "accurate"
+    end if
+
+    ' OSD Nodes (Interactive Settings Deck)
     m.osd = m.top.findNode("osd")
     m.osdTitle = m.top.findNode("osdTitle")
     m.osdRemaining = m.top.findNode("osdRemaining")
@@ -39,6 +47,7 @@ sub init()
     m.video.observeField("state", "onVideoStateChange")
     m.video.observeField("position", "onPositionChange")
     m.subSyncTimer.observeField("fire", "hideSubSyncOSD")
+    m.seekToastTimer.observeField("fire", "hideSeekToast")
     m.osdTimer.observeField("fire", "hideOSD")
     m.subtitleTimer.observeField("fire", "updateSubtitleDisplay")
 
@@ -142,7 +151,9 @@ sub onArgs()
         m.subtitleGroup.visible = false
     end if
 
-    showOSD()
+    ' CRITICAL: Keep interactive controls INACTIVE while video is playing
+    ' Controls only become active when user presses OK to pause!
+    m.osd.visible = false
 end sub
 
 sub onSubtitlesLoaded(event as Object)
@@ -226,7 +237,6 @@ sub onVideoStateChange(event as Object)
         if m.callbackUrl <> ""
             notifyBackend(m.callbackUrl + "?event=finished")
         end if
-        showOSD()
     else if state = "error"
         m.statusLabel.text = "Playback Error"
         m.statusLabel.color = "0xEF4444FF"
@@ -252,8 +262,49 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
 
     lKey = LCase(key)
 
-    if m.osd.visible
-        ' OSD is currently active (video is paused)
+    if not m.osd.visible
+        ' ==============================================================
+        ' CONTROLS ARE NOT ACTIVE (Video is Playing Normally)
+        ' Left / Right skips backward / forward.
+        ' OK pauses video and brings up the controls deck.
+        ' ==============================================================
+        if lKey = "ok"
+            ' Pause playback and show interactive settings menu
+            m.video.control = "pause"
+            m.activePillIndex = 0 ' Default focus on Resume [OK]
+            updatePillVisuals()
+            showOSD()
+            return true
+        else if lKey = "play"
+            togglePlayPause()
+            return true
+        else if lKey = "left" or lKey = "rewind" or lKey = "rev"
+            seekRelative(-15)
+            return true
+        else if lKey = "right" or lKey = "fastforward" or lKey = "fwd"
+            seekRelative(15)
+            return true
+        else if lKey = "replay" or lKey = "instantreplay"
+            seekRelative(-10)
+            return true
+        else if lKey = "up"
+            nudgeSync(0.5)
+            return true
+        else if lKey = "down"
+            nudgeSync(-0.5)
+            return true
+        else if lKey = "back"
+            stopPlayback()
+            return true
+        end if
+    else
+        ' ==============================================================
+        ' CONTROLS ARE ACTIVE (Video is Paused, Menu is Open)
+        ' Left / Right navigates through option pills.
+        ' Up / Down adjusts the focused setting.
+        ' OK selects / resumes.
+        ' Play / Back resumes playback and hides controls.
+        ' ==============================================================
         m.osdTimer.control = "stop"
         m.osdTimer.control = "start"
 
@@ -276,43 +327,16 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         else if lKey = "ok"
             handlePillOK()
             return true
-        else if lKey = "play"
-            ' Resume playback and dismiss OSD
+        else if lKey = "play" or lKey = "back"
+            ' Resume playback and dismiss controls
             m.video.control = "resume"
             hideOSD()
             return true
-        else if lKey = "back"
-            ' Dismiss OSD and resume playback
-            m.video.control = "resume"
-            hideOSD()
-            return true
-        end if
-    else
-        ' Video is playing and OSD is closed
-        if lKey = "ok"
-            ' Pause playback and show interactive settings menu
-            m.video.control = "pause"
-            m.activePillIndex = 0 ' Default focus on Resume [OK]
-            updatePillVisuals()
-            showOSD()
-            return true
-        else if lKey = "play"
-            togglePlayPause()
-            return true
-        else if lKey = "left"
+        else if lKey = "rewind" or lKey = "rev"
             seekRelative(-15)
             return true
-        else if lKey = "right"
+        else if lKey = "fastforward" or lKey = "fwd"
             seekRelative(15)
-            return true
-        else if lKey = "up"
-            nudgeSync(0.5)
-            return true
-        else if lKey = "down"
-            nudgeSync(-0.5)
-            return true
-        else if lKey = "back"
-            stopPlayback()
             return true
         end if
     end if
@@ -469,20 +493,38 @@ sub hideOSD()
 end sub
 
 sub seekRelative(deltaSeconds as Integer)
-    newPos = m.video.position + deltaSeconds
+    curPos = m.video.position
+    if curPos = invalid then curPos = 0.0
+    dur = m.video.duration
+    newPos = curPos + deltaSeconds
     if newPos < 0 then newPos = 0
-    if m.video.duration > 0 and newPos > m.video.duration then newPos = m.video.duration
+    if dur > 0 and newPos > dur then newPos = dur
+
     m.video.seek = newPos
-    showOSD()
+
+    ' Show quick feedback toast WITHOUT making the interactive controls deck active
+    direction = ">> +"
+    if deltaSeconds < 0 then direction = "<< "
+    m.seekToastLabel.text = direction + deltaSeconds.ToStr() + "s  [" + formatTime(newPos) + "]"
+    m.seekToast.visible = true
+    m.seekToastTimer.control = "stop"
+    m.seekToastTimer.control = "start"
+end sub
+
+sub hideSeekToast()
+    m.seekToast.visible = false
 end sub
 
 sub togglePlayPause()
     if m.video.state = "playing"
         m.video.control = "pause"
+        m.activePillIndex = 0
+        updatePillVisuals()
+        showOSD()
     else
         m.video.control = "resume"
+        hideOSD()
     end if
-    showOSD()
 end sub
 
 sub stopPlayback()

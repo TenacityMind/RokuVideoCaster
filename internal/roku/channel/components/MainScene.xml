@@ -37,6 +37,14 @@
     </Group>
     <Timer id="subSyncTimer" repeat="false" duration="2" />
 
+    <!-- Seek Quick Toast (Left/Right remote keys when video is playing) -->
+    <Group id="seekToast" visible="false">
+      <Rectangle width="460" height="60" translation="[730, 60]" color="0x090b10F0">
+        <Label id="seekToastLabel" text="&gt;&gt; +15s" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" />
+      </Rectangle>
+    </Group>
+    <Timer id="seekToastTimer" repeat="false" duration="1.5" />
+
     <!-- Subtitle position timer (checks every 250ms to update subtitle display) -->
     <Timer id="subtitleTimer" repeat="true" duration="0.25" />
 

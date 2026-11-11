@@ -33,12 +33,14 @@ type AnalysisResult struct {
 }
 
 var (
-	srcRegex   = regexp.MustCompile(`(?i)<(?:source|video)[^>]+src=["']([^"']+)["']`)
-	trackRegex = regexp.MustCompile(`(?i)<track[^>]+src=["']([^"']+)["'][^>]*>`)
-	langRegex  = regexp.MustCompile(`(?i)srclang=["']([^"']+)["']`)
-	titleRegex = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
-	hlsRegex   = regexp.MustCompile(`(?i)https?://[^\s"'<>]+\.m3u8[^\s"'<>]*`)
-	mp4Regex   = regexp.MustCompile(`(?i)https?://[^\s"'<>]+\.mp4[^\s"'<>]*`)
+	srcRegex      = regexp.MustCompile(`(?i)<(?:source|video)[^>]+src=["']([^"']+)["']`)
+	trackRegex    = regexp.MustCompile(`(?i)<track[^>]+src=["']([^"']+)["'][^>]*>`)
+	langRegex     = regexp.MustCompile(`(?i)srclang=["']([^"']+)["']`)
+	titleRegex    = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
+	hlsRegex      = regexp.MustCompile(`(?i)https?://[^\s"'<>]+\.m3u8[^\s"'<>]*`)
+	mp4Regex      = regexp.MustCompile(`(?i)https?://[^\s"'<>]+\.mp4[^\s"'<>]*`)
+	iframeRegex   = regexp.MustCompile(`(?i)<iframe[^>]+src=["']([^"']+)["']`)
+	subFileRegex  = regexp.MustCompile(`(?i)https?://[^\s"'<>]+\.(?:vtt|srt)[^\s"'<>]*`)
 )
 
 func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, error) {
@@ -74,36 +76,111 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 		return result, nil
 	}
 
+	// Check if URL query contains an embedded video URL (e.g. ?url=https...m3u8 or ?file=...)
+	for _, v := range parsed.Query() {
+		for _, qv := range v {
+			if strings.Contains(strings.ToLower(qv), ".m3u8") {
+				result.Candidates = append(result.Candidates, StreamCandidate{
+					URL:        qv,
+					Quality:    "Auto Adaptive (Query)",
+					Format:     "Direct HLS",
+					Bitrate:    "Multi-rate",
+					IsSelected: true,
+				})
+				return result, nil
+			} else if strings.Contains(strings.ToLower(qv), ".mp4") {
+				result.Candidates = append(result.Candidates, StreamCandidate{
+					URL:        qv,
+					Quality:    "Direct MP4 (Query)",
+					Format:     "Direct MP4",
+					Bitrate:    "Original",
+					IsSelected: true,
+				})
+				return result, nil
+			}
+		}
+	}
+
 	// 2. Fetch web page content
+	seenUrls := make(map[string]bool)
+	seenSubs := make(map[string]bool)
+
+	html, err := fetchHTML(ctx, targetURL)
+	if err == nil {
+		// Extract Title
+		if match := titleRegex.FindStringSubmatch(html); len(match) > 1 {
+			result.Title = strings.TrimSpace(match[1])
+		}
+
+		extractMediaFromHTML(targetURL, html, result, seenUrls, seenSubs)
+
+		// If no streams found on main page, scan iframes (e.g. video embed providers)
+		if len(result.Candidates) == 0 {
+			iframes := iframeRegex.FindAllStringSubmatch(html, -1)
+			count := 0
+			for _, m := range iframes {
+				if count >= 3 {
+					break
+				}
+				rawSrc := m[1]
+				if strings.HasPrefix(rawSrc, "//") {
+					rawSrc = "https:" + rawSrc
+				}
+				frameURL := resolveURL(targetURL, rawSrc)
+				lFrame := strings.ToLower(frameURL)
+				if strings.Contains(lFrame, "embed") || strings.Contains(lFrame, "player") || strings.Contains(lFrame, "video") || strings.Contains(lFrame, "stream") || strings.Contains(lFrame, "watch") {
+					count++
+					frameHTML, fErr := fetchHTML(ctx, frameURL)
+					if fErr == nil {
+						extractMediaFromHTML(frameURL, frameHTML, result, seenUrls, seenSubs)
+						if len(result.Candidates) > 0 {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// If no video candidate was found on the page
+	if len(result.Candidates) == 0 {
+		return nil, fmt.Errorf("no direct video stream (.m3u8 / .mp4) found on this page. If this site uses a custom encrypted player (e.g. single-page React app), start playing the video in your browser and use the '⚡ Cast to Roku' bookmarklet, or copy the .m3u8 stream link directly")
+	}
+	result.Candidates[0].IsSelected = true
+
+	return result, nil
+}
+
+func fetchHTML(ctx context.Context, targetURL string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
-	client := &http.Client{Timeout: 12 * time.Second}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetch page: %w", err)
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20)) // 2MB max
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	html := string(body)
+	return string(body), nil
+}
 
-	// Extract Title
-	if match := titleRegex.FindStringSubmatch(html); len(match) > 1 {
-		result.Title = strings.TrimSpace(match[1])
-	}
+func extractMediaFromHTML(baseURL, html string, result *AnalysisResult, seenUrls map[string]bool, seenSubs map[string]bool) {
+	// Normalize escaped slashes in JSON objects (e.g. "https:\/\/...")
+	unescapedHTML := strings.ReplaceAll(html, `\/`, `/`)
 
-	// Extract HLS and MP4 links
-	seenUrls := make(map[string]bool)
-
-	for _, hls := range hlsRegex.FindAllString(html, -1) {
+	// Extract HLS links
+	for _, hls := range hlsRegex.FindAllString(unescapedHTML, -1) {
+		hls = strings.Trim(hls, `"' `)
 		if !seenUrls[hls] {
 			seenUrls[hls] = true
 			result.Candidates = append(result.Candidates, StreamCandidate{
@@ -115,15 +192,18 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 		}
 	}
 
-	for _, mp4 := range mp4Regex.FindAllString(html, -1) {
+	// Extract MP4 links
+	for _, mp4 := range mp4Regex.FindAllString(unescapedHTML, -1) {
+		mp4 = strings.Trim(mp4, `"' `)
 		if !seenUrls[mp4] {
 			seenUrls[mp4] = true
 			quality := "1080p FHD"
 			bitrate := "6.2 Mbps"
-			if strings.Contains(strings.ToLower(mp4), "2160") || strings.Contains(strings.ToLower(mp4), "4k") {
+			lMp4 := strings.ToLower(mp4)
+			if strings.Contains(lMp4, "2160") || strings.Contains(lMp4, "4k") {
 				quality = "4K UHD"
 				bitrate = "16.5 Mbps"
-			} else if strings.Contains(strings.ToLower(mp4), "720") {
+			} else if strings.Contains(lMp4, "720") {
 				quality = "720p HD"
 				bitrate = "2.8 Mbps"
 			}
@@ -136,10 +216,10 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 		}
 	}
 
-	// Extract <source> tags
-	for _, match := range srcRegex.FindAllStringSubmatch(html, -1) {
+	// Extract <source> and <video> tags
+	for _, match := range srcRegex.FindAllStringSubmatch(unescapedHTML, -1) {
 		rawSrc := match[1]
-		fullSrc := resolveURL(targetURL, rawSrc)
+		fullSrc := resolveURL(baseURL, rawSrc)
 		if !seenUrls[fullSrc] {
 			seenUrls[fullSrc] = true
 			format := "Direct Video"
@@ -158,27 +238,39 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 	}
 
 	// Extract <track> subtitles
-	for _, match := range trackRegex.FindAllStringSubmatch(html, -1) {
+	for _, match := range trackRegex.FindAllStringSubmatch(unescapedHTML, -1) {
 		rawTrack := match[1]
-		fullTrack := resolveURL(targetURL, rawTrack)
-		lang := "en"
-		if lMatch := langRegex.FindStringSubmatch(match[0]); len(lMatch) > 1 {
-			lang = lMatch[1]
+		fullTrack := resolveURL(baseURL, rawTrack)
+		if !seenSubs[fullTrack] {
+			seenSubs[fullTrack] = true
+			lang := "EN"
+			if lMatch := langRegex.FindStringSubmatch(match[0]); len(lMatch) > 1 {
+				lang = strings.ToUpper(lMatch[1])
+			}
+			result.Subtitles = append(result.Subtitles, SubtitleOption{
+				URL:      fullTrack,
+				Language: lang,
+				Format:   "vtt",
+			})
 		}
-		result.Subtitles = append(result.Subtitles, SubtitleOption{
-			URL:      fullTrack,
-			Language: strings.ToUpper(lang),
-			Format:   "vtt",
-		})
 	}
 
-	// If no video candidate was found on the page
-	if len(result.Candidates) == 0 {
-		return nil, fmt.Errorf("no direct video stream (.m3u8 / .mp4) found on this page. If this site uses a custom embedded player, please copy the direct stream link (or inspect the Network tab for .m3u8), or stream the video file using 'Personal Local Files'")
+	// Extract direct subtitle file links (.vtt, .srt) found in scripts
+	for _, sub := range subFileRegex.FindAllString(unescapedHTML, -1) {
+		sub = strings.Trim(sub, `"' `)
+		if !seenSubs[sub] {
+			seenSubs[sub] = true
+			ext := "vtt"
+			if strings.HasSuffix(strings.ToLower(sub), ".srt") {
+				ext = "srt"
+			}
+			result.Subtitles = append(result.Subtitles, SubtitleOption{
+				URL:      sub,
+				Language: "Auto",
+				Format:   ext,
+			})
+		}
 	}
-	result.Candidates[0].IsSelected = true
-
-	return result, nil
 }
 
 func resolveURL(baseURL, refURL string) string {

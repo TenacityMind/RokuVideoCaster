@@ -41,7 +41,16 @@ func NewServer(cfg *config.Config, webFS http.FileSystem) *Server {
 }
 
 func (s *Server) Handler() http.Handler {
-	return s.mux
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE, PUT")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		s.mux.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) routes() {
@@ -327,6 +336,7 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		StreamURL     string  `json:"stream_url"`
+		MediaURL      string  `json:"media_url"`
 		Title         string  `json:"title"`
 		SubtitleURL   string  `json:"subtitle_url"`
 		SubtitleToken string  `json:"subtitle_token"`
@@ -335,6 +345,9 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid json: "+err.Error())
 		return
+	}
+	if req.StreamURL == "" && req.MediaURL != "" {
+		req.StreamURL = req.MediaURL
 	}
 
 	targetIP, _, port, _ := s.cfg.Get()

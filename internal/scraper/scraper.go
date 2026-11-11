@@ -12,11 +12,12 @@ import (
 )
 
 type StreamCandidate struct {
-	URL        string `json:"url"`
-	Quality    string `json:"quality"`     // e.g. "1080p FHD", "4K UHD", "720p HD", "Auto"
-	Format     string `json:"format"`      // "Direct HLS", "Direct MP4", "DASH"
-	Bitrate    string `json:"bitrate"`     // e.g. "6.2 Mbps", "16.5 Mbps"
-	IsSelected bool   `json:"is_selected"`
+	URL        string            `json:"url"`
+	Quality    string            `json:"quality"`     // e.g. "1080p FHD", "4K UHD", "720p HD", "Auto"
+	Format     string            `json:"format"`      // "Direct HLS", "Direct MP4", "DASH"
+	Bitrate    string            `json:"bitrate"`     // e.g. "6.2 Mbps", "16.5 Mbps"
+	IsSelected bool              `json:"is_selected"`
+	Headers    map[string]string `json:"headers,omitempty"`
 }
 
 type SubtitleOption struct {
@@ -101,7 +102,15 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 		}
 	}
 
-	// 2. Fetch web page content
+	// 2. Automated Headless Browser Scraper (ChromeDP Engine with Stealth & Turnstile bypass)
+	// Opens the page in headless Chrome, executes client-side scripts, navigates player iframes,
+	// clicks play buttons, and sniffs outgoing video requests (.m3u8, .mp4, DASH, subtitles).
+	browserResult, browserErr := ExtractWithBrowser(ctx, targetURL)
+	if browserErr == nil && len(browserResult.Candidates) > 0 {
+		return browserResult, nil
+	}
+
+	// 3. Fallback: Static HTML / regex extraction (when Chrome is unavailable or page has raw media tags)
 	seenUrls := make(map[string]bool)
 	seenSubs := make(map[string]bool)
 
@@ -144,7 +153,7 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 
 	// If no video candidate was found on the page
 	if len(result.Candidates) == 0 {
-		return nil, fmt.Errorf("no direct video stream (.m3u8 / .mp4) found on this page. If this site uses a custom encrypted player (e.g. single-page React app), start playing the video in your browser and use the '⚡ Cast to Roku' bookmarklet, or copy the .m3u8 stream link directly")
+		return nil, fmt.Errorf("no direct video stream (.m3u8 / .mp4) could be extracted from this page. If this site requires authentication or custom interaction, you can inspect the Network tab and paste the direct stream link")
 	}
 	result.Candidates[0].IsSelected = true
 

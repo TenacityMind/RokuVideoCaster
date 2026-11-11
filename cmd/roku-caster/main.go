@@ -15,6 +15,7 @@ import (
 
 	"github.com/TenacityMind/RokuVideoCaster/internal/api"
 	"github.com/TenacityMind/RokuVideoCaster/internal/config"
+	"github.com/TenacityMind/RokuVideoCaster/internal/media"
 	"github.com/TenacityMind/RokuVideoCaster/internal/roku"
 	"github.com/TenacityMind/RokuVideoCaster/web"
 )
@@ -53,6 +54,11 @@ func main() {
 			log.Fatalf("[ERROR] Installation failed: %v\n", err)
 		}
 		fmt.Printf("✅ %s\n", res.Message)
+		client := roku.NewClient()
+		localIP := media.GetOutboundIP(savedIP)
+		_ = client.Launch(context.Background(), savedIP, roku.LaunchParams{
+			WebURL: fmt.Sprintf("http://%s:%d", localIP, port),
+		})
 		return
 	}
 

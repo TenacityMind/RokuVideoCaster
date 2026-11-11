@@ -5,19 +5,28 @@
   </interface>
   <children>
     <!-- Background for Dashboard / Idle Screen -->
-    <Rectangle id="bg" width="1920" height="1080" color="0x090b10FF" />
+    <Rectangle id="bg" width="1920" height="1080" color="0x0b0e14FF" />
+    <Rectangle width="1920" height="4" translation="[0, 0]" color="0x38bdf8FF" />
 
     <!-- Cinematic Dashboard UI (Shown when idle) -->
     <Group id="dashboard" visible="true">
-      <Poster id="logo" uri="pkg:/images/icon_focus_fhd.png" width="240" height="180" translation="[840, 160]" />
-      <Label text="Roku Video Caster" horizAlign="center" width="1920" translation="[0, 370]" font="font:LargeBoldSystemFont" color="0x38bdf8FF" />
-      <Label id="statusLabel" text="* READY TO CAST" horizAlign="center" width="1920" translation="[0, 430]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
+      <Label text="ROKU VIDEO CASTER" horizAlign="center" width="1920" translation="[0, 200]" font="font:LargeBoldSystemFont" color="0x38bdf8FF" />
+      <Label id="statusLabel" text="* READY TO CAST" horizAlign="center" width="1920" translation="[0, 260]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
 
       <!-- Modern Frosted Glass Card -->
-      <Rectangle width="900" height="260" translation="[510, 500]" color="0x121620EE">
-        <Label text="Open the Web Dashboard on your computer or phone:&#xA;http://localhost:8080&#xA;&#xA;Direct passthrough enabled for 4K UHD, Dolby Atmos &amp; Subtitles" horizAlign="center" width="860" height="180" translation="[20, 35]" font="font:MediumSystemFont" color="0xe2e8f0FF" wrap="true" />
-        <Label id="deviceInfo" text="Roku TV Native Engine | Version 2.0" horizAlign="center" width="860" translation="[20, 205]" font="font:SmallSystemFont" color="0x94a3b8FF" />
-      </Rectangle>
+      <Rectangle width="1100" height="360" translation="[410, 340]" color="0x121826F6" />
+      <Rectangle width="1100" height="2" translation="[410, 340]" color="0x38bdf840" />
+
+      <Label text="HOW TO CAST TO THIS TV" horizAlign="center" width="1100" translation="[410, 365]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" />
+      <Label text="Open the Web Dashboard on your Computer or Phone:" horizAlign="center" width="1100" translation="[410, 405]" font="font:MediumSystemFont" color="0xe2e8f0FF" />
+
+      <!-- Prominent High-Contrast URL Display Box -->
+      <Rectangle width="720" height="64" translation="[600, 455]" color="0x090c14FF" />
+      <Label id="webUrlLabel" text="http://localhost:8080" horizAlign="center" vertAlign="center" width="720" height="64" translation="[600, 455]" font="font:LargeBoldSystemFont" color="0x38bdf8FF" />
+
+      <Label text="Select any local video file or paste an online streaming link." horizAlign="center" width="1100" translation="[410, 545]" font="font:MediumSystemFont" color="0xcfd8e3FF" />
+      <Label text="Direct Hardware Passthrough  *  4K HDR  *  Multi-Track Audio  *  Subtitles" horizAlign="center" width="1100" translation="[410, 610]" font="font:SmallSystemFont" color="0x64748bFF" />
+      <Label id="deviceInfo" text="Roku TV Native Engine | Version 2.0" horizAlign="center" width="1100" translation="[410, 645]" font="font:SmallSystemFont" color="0x475569FF" />
     </Group>
 
     <!-- Fullscreen Video Player -->

@@ -53,6 +53,7 @@ type LaunchParams struct {
 	SubOffset   float64 `json:"sub_offset"`
 	AudioTrack  int     `json:"audio_track"`
 	CallbackURL string  `json:"callback_url"`
+	WebURL      string  `json:"web_url"`
 }
 
 type Client struct {
@@ -182,6 +183,9 @@ func (c *Client) Launch(ctx context.Context, host string, params LaunchParams) e
 	}
 	if params.CallbackURL != "" {
 		q.Set("callback_url", params.CallbackURL)
+	}
+	if params.WebURL != "" {
+		q.Set("web_url", params.WebURL)
 	}
 
 	// 1. Launch dev channel (brings app forward & passes deep link args)

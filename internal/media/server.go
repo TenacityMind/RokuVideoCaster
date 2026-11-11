@@ -123,8 +123,10 @@ func (s *Server) ExtractEmbeddedSubtitle(ctx context.Context, filePath string, s
 }
 
 func (s *Server) ServeHTTPMedia(w http.ResponseWriter, r *http.Request) {
-	// e.g. /media/{token}
-	token := strings.TrimPrefix(r.URL.Path, "/media/")
+	// e.g. /media/{token} or /media/{token}/video.mp4
+	trimmed := strings.TrimPrefix(r.URL.Path, "/media/")
+	parts := strings.Split(trimmed, "/")
+	token := parts[0]
 
 	s.mu.RLock()
 	filePath, ok := s.fileRegistry[token]

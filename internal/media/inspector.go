@@ -51,7 +51,73 @@ type ffprobeOutput struct {
 	} `json:"format"`
 }
 
+func ResolveFilePath(path string) string {
+	if path == "" {
+		return ""
+	}
+	// 1. Direct path check
+	if stat, err := os.Stat(path); err == nil && !stat.IsDir() {
+		if abs, err := filepath.Abs(path); err == nil {
+			return abs
+		}
+		return path
+	}
+
+	// 2. Expand home directory prefix (~/...)
+	if strings.HasPrefix(path, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			expanded := filepath.Join(home, path[2:])
+			if stat, err := os.Stat(expanded); err == nil && !stat.IsDir() {
+				return expanded
+			}
+		}
+	}
+
+	// 3. Search common user directories for the filename
+	base := filepath.Base(path)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return path
+	}
+
+	candidates := []string{
+		filepath.Join(home, "Downloads", base),
+		filepath.Join(home, "Movies", base),
+		filepath.Join(home, "Desktop", base),
+		filepath.Join(home, "Videos", base),
+		filepath.Join(home, "Documents", base),
+	}
+	for _, c := range candidates {
+		if stat, err := os.Stat(c); err == nil && !stat.IsDir() {
+			return c
+		}
+	}
+
+	// 4. Also check immediate subdirectories in Downloads and Movies
+	searchDirs := []string{
+		filepath.Join(home, "Downloads"),
+		filepath.Join(home, "Movies"),
+	}
+	for _, dir := range searchDirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				subCandidate := filepath.Join(dir, entry.Name(), base)
+				if stat, err := os.Stat(subCandidate); err == nil && !stat.IsDir() {
+					return subCandidate
+				}
+			}
+		}
+	}
+
+	return path
+}
+
 func ProbeMediaFile(ctx context.Context, filePath string) (*MediaInfo, error) {
+	filePath = ResolveFilePath(filePath)
 	stat, err := os.Stat(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("stat media file: %w", err)

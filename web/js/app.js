@@ -3,6 +3,7 @@ let appConfig = { roku_ip: "", server_port: 8080, auto_advance: true };
 let currentLocalFile = null;
 let currentLocalProbe = null;
 let currentLocalSubToken = "";
+let currentLocalResolvedPath = "";
 let currentWebAnalysis = null;
 let currentWebSubToken = "";
 let currentWebSubMode = "upload";
@@ -196,6 +197,14 @@ async function onFileSelected(event) {
 }
 
 function renderProbeResults(info) {
+  if (info.file_path) {
+    currentLocalResolvedPath = info.file_path;
+    const pathEl = document.getElementById("localResolvedPathDisplay");
+    if (pathEl) {
+      pathEl.textContent = "Location: " + info.file_path;
+      pathEl.classList.remove("hidden");
+    }
+  }
   if (info.resolution) {
     document.getElementById("localResolution").textContent = info.resolution;
   }
@@ -271,7 +280,7 @@ function pickLocalSub() {
 async function castCurrentLocal() {
   if (!currentLocalFile) return alert("Please select a video file first");
 
-  const filePath = currentLocalFile.path || currentLocalFile.name;
+  const filePath = currentLocalResolvedPath || currentLocalFile.path || currentLocalFile.name;
   const subVal = document.getElementById("subTrackSelect").value;
   let embeddedIdx = -1;
   let subToken = "";
@@ -310,7 +319,7 @@ async function castCurrentLocal() {
 
 async function addCurrentLocalToQueue() {
   if (!currentLocalFile) return alert("Please select a video file first");
-  const filePath = currentLocalFile.path || currentLocalFile.name;
+  const filePath = currentLocalResolvedPath || currentLocalFile.path || currentLocalFile.name;
 
   await fetch("/api/playlist/add", {
     method: "POST",

@@ -190,7 +190,8 @@ func (s *Server) handleProbeLocal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	info, err := media.ProbeMediaFile(r.Context(), req.FilePath)
+	resolvedPath := media.ResolveFilePath(req.FilePath)
+	info, err := media.ProbeMediaFile(r.Context(), resolvedPath)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -287,14 +288,19 @@ func (s *Server) handleCastLocal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	localIP := media.GetOutboundIP(targetIP)
-	fileToken := s.mediaServer.RegisterFile(req.FilePath)
-	mediaURL := fmt.Sprintf("http://%s:%d/media/%s", localIP, port, fileToken)
+	resolvedPath := media.ResolveFilePath(req.FilePath)
+	fileToken := s.mediaServer.RegisterFile(resolvedPath)
+	ext := filepath.Ext(resolvedPath)
+	if ext == "" {
+		ext = ".mp4"
+	}
+	mediaURL := fmt.Sprintf("http://%s:%d/media/%s/video%s", localIP, port, fileToken, ext)
 
 	var subURL string
 	if req.SubtitleToken != "" {
 		subURL = fmt.Sprintf("http://%s:%d/subtitles/%s.srt", localIP, port, req.SubtitleToken)
 	} else if req.EmbeddedSubIndex >= 0 {
-		subTok, err := s.mediaServer.ExtractEmbeddedSubtitle(r.Context(), req.FilePath, req.EmbeddedSubIndex)
+		subTok, err := s.mediaServer.ExtractEmbeddedSubtitle(r.Context(), resolvedPath, req.EmbeddedSubIndex)
 		if err == nil {
 			subURL = fmt.Sprintf("http://%s:%d/subtitles/%s.srt", localIP, port, subTok)
 		}
@@ -302,10 +308,11 @@ func (s *Server) handleCastLocal(w http.ResponseWriter, r *http.Request) {
 
 	title := req.Title
 	if title == "" {
-		title = filepath.Base(req.FilePath)
+		title = filepath.Base(resolvedPath)
 	}
 
 	callbackURL := fmt.Sprintf("http://%s:%d/api/roku/event", localIP, port)
+	webURL := fmt.Sprintf("http://%s:%d", localIP, port)
 
 	err := s.rokuClient.Launch(r.Context(), targetIP, roku.LaunchParams{
 		MediaURL:    mediaURL,
@@ -314,6 +321,7 @@ func (s *Server) handleCastLocal(w http.ResponseWriter, r *http.Request) {
 		SubOffset:   req.SubOffset,
 		AudioTrack:  req.AudioTrack,
 		CallbackURL: callbackURL,
+		WebURL:      webURL,
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -368,6 +376,7 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 	}
 
 	callbackURL := fmt.Sprintf("http://%s:%d/api/roku/event", localIP, port)
+	webURL := fmt.Sprintf("http://%s:%d", localIP, port)
 
 	err := s.rokuClient.Launch(r.Context(), targetIP, roku.LaunchParams{
 		MediaURL:    req.StreamURL,
@@ -375,6 +384,7 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 		Title:       title,
 		SubOffset:   req.SubOffset,
 		CallbackURL: callbackURL,
+		WebURL:      webURL,
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())

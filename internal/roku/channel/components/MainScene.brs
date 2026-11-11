@@ -4,6 +4,7 @@ sub init()
     ' Screen nodes
     m.dashboard = m.top.findNode("dashboard")
     m.statusLabel = m.top.findNode("statusLabel")
+    m.webUrlLabel = m.top.findNode("webUrlLabel")
     m.video = m.top.findNode("video")
 
     m.subtitleGroup = m.top.findNode("subtitleGroup")
@@ -101,11 +102,15 @@ sub onArgs()
     if args.DoesExist("title") and args["title"] <> invalid then title = args["title"]
     if args.DoesExist("sub_offset") and args["sub_offset"] <> invalid then offsetStr = args["sub_offset"]
     if args.DoesExist("callback_url") and args["callback_url"] <> invalid then m.callbackUrl = args["callback_url"]
+    if args.DoesExist("web_url") and args["web_url"] <> invalid and args["web_url"] <> ""
+        if m.webUrlLabel <> invalid then m.webUrlLabel.text = args["web_url"]
+    end if
 
     if mediaUrl = "" or mediaUrl = "undefined"
-        m.statusLabel.text = "Cannot Play: Invalid or Non-Video URL"
-        m.statusLabel.color = "0xEF4444FF"
+        m.statusLabel.text = "* READY TO CAST"
+        m.statusLabel.color = "0x34d399FF"
         m.dashboard.visible = true
+        m.video.visible = false
         return
     end if
 
@@ -147,6 +152,8 @@ sub onArgs()
     else if InStr(1, lUrl, ".mpd") > 0
         content.streamFormat = "dash"
         content.live = false
+    else if InStr(1, lUrl, ".mkv") > 0
+        content.streamFormat = "mkv"
     else
         content.streamFormat = "mp4"
     end if
@@ -355,6 +362,8 @@ sub stopPlayback()
     m.subtitleTimer.control = "stop"
     m.cues = []
     m.isShowingSample = false
+    m.statusLabel.text = "* READY TO CAST"
+    m.statusLabel.color = "0x34d399FF"
     m.dashboard.visible = true
     m.top.setFocus(true)
 end sub
@@ -530,11 +539,10 @@ sub onVideoStateChange(event as Object)
 end sub
 
 sub notifyBackend(url as String)
-    http = CreateObject("roUrlTransfer")
-    http.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    http.InitClientCertificates()
-    http.SetUrl(url)
-    http.AsyncGetToString()
+    if url = invalid or url = "" then return
+    task = CreateObject("roSGNode", "NotifyTask")
+    task.url = url
+    task.control = "RUN"
 end sub
 
 ' ==============================================================

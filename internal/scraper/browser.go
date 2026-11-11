@@ -277,11 +277,26 @@ func ExtractWithBrowser(parentCtx context.Context, targetURL string) (*AnalysisR
 
 func isMediaURL(raw string) bool {
 	l := strings.ToLower(raw)
+	if strings.Contains(l, ".webmanifest") ||
+		strings.Contains(l, "manifest.json") ||
+		strings.Contains(l, "favicon") ||
+		strings.HasSuffix(l, ".png") ||
+		strings.HasSuffix(l, ".jpg") ||
+		strings.HasSuffix(l, ".jpeg") ||
+		strings.HasSuffix(l, ".gif") ||
+		strings.HasSuffix(l, ".svg") ||
+		strings.HasSuffix(l, ".ico") ||
+		strings.HasSuffix(l, ".webp") ||
+		strings.HasSuffix(l, ".woff") ||
+		strings.HasSuffix(l, ".woff2") ||
+		strings.HasSuffix(l, ".js") ||
+		strings.HasSuffix(l, ".css") {
+		return false
+	}
 	return strings.Contains(l, ".m3u8") ||
 		strings.Contains(l, ".mpd") ||
 		strings.Contains(l, ".mp4") ||
 		strings.Contains(l, ".m4v") ||
-		strings.Contains(l, ".webm") ||
 		strings.Contains(l, ".mkv")
 }
 

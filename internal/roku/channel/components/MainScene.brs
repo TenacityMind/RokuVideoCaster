@@ -143,8 +143,10 @@ sub onArgs()
     lUrl = LCase(mediaUrl)
     if InStr(1, lUrl, ".m3u8") > 0
         content.streamFormat = "hls"
+        content.live = false
     else if InStr(1, lUrl, ".mpd") > 0
         content.streamFormat = "dash"
+        content.live = false
     else
         content.streamFormat = "mp4"
     end if
@@ -515,11 +517,15 @@ sub onVideoStateChange(event as Object)
             notifyBackend(m.callbackUrl + "?event=finished")
         end if
     else if state = "error"
-        m.statusLabel.text = "Playback Error"
+        errCode = m.video.errorCode
+        errMsg = m.video.errorMsg
+        print "MainScene: video error code="; errCode; " msg="; errMsg
+        m.statusLabel.text = "Playback Error: " + errMsg.ToStr()
         m.statusLabel.color = "0xEF4444FF"
         m.dashboard.visible = true
         m.video.visible = false
         m.subtitleGroup.visible = false
+        showToast("Error: " + errMsg.ToStr())
     end if
 end sub
 

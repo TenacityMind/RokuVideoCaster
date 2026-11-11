@@ -1,8 +1,13 @@
 # 📺 Roku Video Caster (V2.0 PRO)
 
-A dedicated, lightweight video casting system built **exclusively for Roku TV**. 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go)](https://golang.org)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Android-lightgrey.svg)]()
+[![Roku OS](https://img.shields.io/badge/Roku%20OS-10.0+-662D91.svg?logo=roku)](https://developer.roku.com)
 
-Cast personal local movies and online videos directly to your Roku TV with zero buffering, multi-track audio switching (Dolby Atmos / 5.1 passthrough), continuous playlists, and an interactive on-screen media player with real-time subtitle font sizing and sync adjustment.
+A dedicated, high-performance streaming & video casting system built **exclusively for Roku TV**. 
+
+Cast personal local movies and online videos directly to your Roku TV with zero buffering, multi-track audio switching (Dolby Atmos / 5.1 passthrough), continuous playlist queues, and an interactive on-screen media player with real-time subtitle font sizing and sync adjustment.
 
 ---
 
@@ -10,8 +15,17 @@ Cast personal local movies and online videos directly to your Roku TV with zero 
 
 - **📺 Roku TV Exclusive:** Zero DLNA or Chromecast overhead. Built specifically for Roku OS using the native SceneGraph framework.
 - **⚡ Hardware Direct Passthrough:** Direct hardware streaming for 4K UHD, HDR, and Dolby Atmos/5.1 surround sound without local transcoding.
+- **📁 Intelligent Local File Streaming:**
+  - Drop or pick any video file (`.mp4`, `.mkv`, `.m4v`, `.mov`) in the Web UI.
+  - **Smart Disk Discovery:** Automatically locates files in your user folders (`~/Downloads`, `~/Movies`, `~/Desktop`, `~/Videos`) even when standard browser sandboxes omit absolute file paths.
+  - **Full Byte-Range Seeking:** HTTP `206 Partial Content` streaming enables immediate scrubbing and instant seek on Roku's native hardware decoder.
+  - Inspects resolution, duration, audio tracks, and embedded subtitles via `ffprobe`.
+- **🌐 Headless Chrome Stream Scraper:**
+  - Paste streaming links or video pages (e.g. `primeshows.org`, `flixer.su`).
+  - Automated headless Chrome engine navigates iframes, bypasses Cloudflare Turnstile, and intercepts direct `.m3u8` master and variant playlists.
+  - Robust false-positive filtering prevents web manifest stalls.
 - **🎮 Redesigned Cinematic TV Media Player:**
-  - **Discrete Seek vs. Menu Modes:** While playing, `Left`/`Right` directly skips backward/forward by 15s without menus getting in the way.
+  - **Discrete Seek vs. Menu Modes:** While playing, `Left`/`Right` directly skips backward/forward by 15s with a quick unobtrusive toast—no menus block your view.
   - **Main Player Deck (Remote `OK` Key):** Pauses video and shows progress bar, elapsed/total time, and 3 focused action cards: `[ > Resume ]`, `[ [CC] Subtitles & Audio ]`, and `[ >> Next Video ]`.
   - **Dedicated Subtitle & Audio Drawer:** Sleek side panel with 6 easy vertical rows:
     - **Subtitle Track:** Toggle tracks (`English [CC]` / `OFF`).
@@ -20,8 +34,10 @@ Cast personal local movies and online videos directly to your Roku TV with zero 
     - **Sync Timing:** Nudge timing by `±0.5s` with real-time zero-buffering response (`OK` resets to `0.0s`).
     - **Audio Track:** Toggle between available embedded audio streams.
     - **Live On-Screen Preview:** See your chosen font size and color live on screen before resuming playback!
-- **📁 Personal Local File Streaming:** Drop any `.mkv`, `.mp4`, `.mov`, or `.webm` file. Automatically inspects audio tracks and embedded subtitles using `ffprobe`.
-- **🌐 Headless Chrome Stream Scraper:** Paste streaming links or video pages (e.g. `primeshows.org`, `flixer.su`). The built-in browser engine automatically navigates iframes, bypasses Cloudflare Turnstile, and extracts direct `.m3u8` streams and subtitles.
+  - **Pure ASCII UI:** 100% ASCII indicators (`*`, `-`, `[CC]`, `[>]`, `<  >`) eliminate missing rectangular glyph boxes across all Roku OS system fonts.
+- **🏠 Cinematic TV Home Screen / Dashboard:**
+  - Displays a clean emerald green `* READY TO CAST` status on startup.
+  - Features a high-contrast glowing pill displaying your computer's actual local network IP (e.g. `http://10.0.0.70:8080`) so you can open the dashboard instantly on your phone, tablet, or laptop.
 - **💬 Flexible Subtitle Fallback:** If an online video lacks subtitles, pair it instantly with your own uploaded `.srt`/`.vtt` file or direct subtitle link.
 - **📑 Continuous Playlist Queue:** Queue multiple episodes or movies with auto-advance to the next video when finished.
 - **🚀 Standalone Single Binary:** macOS and Windows single-file executables with embedded web dashboard. No Node.js, Go, or Python needed to run!
@@ -62,6 +78,12 @@ Download `roku-caster-win.exe` and double-click to launch.
 2. Click the TV connection badge in the top-right corner.
 3. Enter your **Roku TV IP** and **Developer Password**.
 4. Click **"Sideload / Update Channel on TV"**. The channel will install and appear on your Roku TV home screen!
+
+### CLI Sideload / Update Option
+You can also sideload or update the channel directly from the command line:
+```bash
+./bin/roku-caster -install -ip 192.168.1.50 -password your-password
+```
 
 ---
 

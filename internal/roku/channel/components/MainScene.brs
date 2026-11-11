@@ -61,8 +61,8 @@ sub init()
     updatePillVisuals()
 end sub
 
-sub onArgs(event as Object)
-    args = event.getData()
+sub onArgs()
+    args = m.top.args
     if args = invalid then return
 
     mediaUrl = ""
@@ -70,20 +70,27 @@ sub onArgs(event as Object)
     title = ""
     offsetStr = ""
 
-    if args.media_url <> invalid then mediaUrl = args.media_url
-    if args.sub_url <> invalid then subUrl = args.sub_url
-    if args.title <> invalid then title = args.title
-    if args.sub_offset <> invalid then offsetStr = args.sub_offset
-    if args.callback_url <> invalid then m.callbackUrl = args.callback_url
+    if args.DoesExist("url") and args["url"] <> invalid then mediaUrl = args["url"]
+    if args.DoesExist("media_url") and args["media_url"] <> invalid then mediaUrl = args["media_url"]
+    if args.DoesExist("subtitles") and args["subtitles"] <> invalid then subUrl = args["subtitles"]
+    if args.DoesExist("sub_url") and args["sub_url"] <> invalid then subUrl = args["sub_url"]
+    if args.DoesExist("title") and args["title"] <> invalid then title = args["title"]
+    if args.DoesExist("sub_offset") and args["sub_offset"] <> invalid then offsetStr = args["sub_offset"]
+    if args.DoesExist("callback_url") and args["callback_url"] <> invalid then m.callbackUrl = args["callback_url"]
 
-    if mediaUrl = "" then return
+    if mediaUrl = "" or mediaUrl = "undefined"
+        m.statusLabel.text = "Cannot Play: Invalid or Non-Video URL"
+        m.statusLabel.color = "0xEF4444FF"
+        m.dashboard.visible = true
+        return
+    end if
 
     if title <> ""
         m.currentTitle = title
     else
         m.currentTitle = "NOW PLAYING"
     end if
-    m.osdTitle.text = m.currentTitle.ToStr().UCase()
+    m.osdTitle.text = UCase(m.currentTitle.ToStr())
 
     if offsetStr <> ""
         m.subOffset = Val(offsetStr)

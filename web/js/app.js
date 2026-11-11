@@ -369,7 +369,7 @@ function renderWebAnalysis(data) {
           <div class="text-xs font-bold text-white">${c.quality}</div>
           <div class="text-[10px] text-slate-400 font-mono">${c.format} • ${c.bitrate}</div>
         </div>
-        <input type="radio" name="webCandidateRadio" value="${c.URL}" ${idx === 0 ? "checked" : ""} class="text-sky-500 focus:ring-0">
+        <input type="radio" name="webCandidateRadio" value="${c.url || c.URL || ''}" ${idx === 0 ? "checked" : ""} class="text-sky-500 focus:ring-0">
       `;
       grid.appendChild(card);
     });
@@ -385,8 +385,8 @@ function renderWebAnalysis(data) {
     badge.innerHTML = `<span>✓</span> ${data.subtitles.length} Subtitles Discovered`;
     data.subtitles.forEach(s => {
       const opt = document.createElement("option");
-      opt.value = s.URL;
-      opt.textContent = `${s.Language} (${s.Format.toUpperCase()})`;
+      opt.value = s.url || s.URL || "";
+      opt.textContent = `${s.language || s.Language || "Sub"} (${(s.format || s.Format || "SRT").toUpperCase()})`;
       autoSelect.appendChild(opt);
     });
     setWebSubMode("auto");
@@ -443,10 +443,10 @@ function pickWebLocalSub() {
 async function castCurrentWeb() {
   let streamURL = document.getElementById("webStreamUrl").value.trim();
   const selectedRadio = document.querySelector('input[name="webCandidateRadio"]:checked');
-  if (selectedRadio) {
+  if (selectedRadio && selectedRadio.value && selectedRadio.value !== "undefined") {
     streamURL = selectedRadio.value;
   }
-  if (!streamURL) return alert("Please enter or select a stream link");
+  if (!streamURL || streamURL === "undefined") return alert("Please enter or select a valid video stream link");
 
   let subURL = "";
   let subToken = "";
@@ -458,7 +458,7 @@ async function castCurrentWeb() {
     subURL = document.getElementById("webScrapedSubSelect").value;
   }
 
-  const title = currentWebAnalysis ? currentWebAnalysis.Title : "Online Stream";
+  const title = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
 
   try {
     const res = await fetch("/api/cast/web", {

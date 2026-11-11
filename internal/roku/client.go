@@ -163,12 +163,12 @@ func (c *Client) GetActiveApp(ctx context.Context, host string) (string, error) 
 }
 
 func (c *Client) Launch(ctx context.Context, host string, params LaunchParams) error {
-	active, _ := c.GetActiveApp(ctx, host)
-
 	// Build query params
 	q := url.Values{}
+	q.Set("url", params.MediaURL)
 	q.Set("media_url", params.MediaURL)
 	if params.SubURL != "" {
+		q.Set("subtitles", params.SubURL)
 		q.Set("sub_url", params.SubURL)
 	}
 	if params.Title != "" {
@@ -184,16 +184,9 @@ func (c *Client) Launch(ctx context.Context, host string, params LaunchParams) e
 		q.Set("callback_url", params.CallbackURL)
 	}
 
-	var endpoint string
-	if active == "dev" {
-		// App already running: send input event without cold restart
-		endpoint = fmt.Sprintf("http://%s:%s/input?%s", host, ecpPort, q.Encode())
-	} else {
-		// App not running: launch dev channel with deep link params
-		endpoint = fmt.Sprintf("http://%s:%s/launch/dev?%s", host, ecpPort, q.Encode())
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
+	// 1. Launch dev channel (brings app forward & passes deep link args)
+	launchEndpoint := fmt.Sprintf("http://%s:%s/launch/dev?%s", host, ecpPort, q.Encode())
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, launchEndpoint, nil)
 	if err != nil {
 		return err
 	}
@@ -207,6 +200,15 @@ func (c *Client) Launch(ctx context.Context, host string, params LaunchParams) e
 	if resp.StatusCode >= http.StatusBadRequest {
 		return fmt.Errorf("launch returned HTTP %d", resp.StatusCode)
 	}
+
+	// 2. Also send /input event so if channel was already in message loop, it receives input instantly
+	inputEndpoint := fmt.Sprintf("http://%s:%s/input?%s", host, ecpPort, q.Encode())
+	if inReq, err := http.NewRequestWithContext(ctx, http.MethodPost, inputEndpoint, nil); err == nil {
+		if inResp, err := c.httpClient.Do(inReq); err == nil {
+			_ = inResp.Body.Close()
+		}
+	}
+
 	return nil
 }
 

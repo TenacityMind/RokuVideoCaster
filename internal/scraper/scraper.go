@@ -53,21 +53,21 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 	}
 
 	// 1. Direct media link check (.m3u8, .mp4, .mkv, .webm)
-	lower := strings.ToLower(parsed.Path)
-	if strings.HasSuffix(lower, ".m3u8") {
+	lower := strings.ToLower(parsed.Path + "?" + parsed.RawQuery)
+	if strings.Contains(lower, ".m3u8") {
 		result.Candidates = append(result.Candidates, StreamCandidate{
 			URL:        targetURL,
-			Quality:    "Auto Adaptive",
+			Quality:    "Auto Adaptive (1080p/4K)",
 			Format:     "Direct HLS",
 			Bitrate:    "Multi-rate",
 			IsSelected: true,
 		})
 		return result, nil
-	} else if strings.HasSuffix(lower, ".mp4") || strings.HasSuffix(lower, ".m4v") {
+	} else if strings.Contains(lower, ".mp4") || strings.Contains(lower, ".m4v") || strings.Contains(lower, ".mkv") || strings.Contains(lower, ".webm") {
 		result.Candidates = append(result.Candidates, StreamCandidate{
 			URL:        targetURL,
-			Quality:    "Direct Source",
-			Format:     "Direct MP4",
+			Quality:    "Direct Video Source",
+			Format:     "Direct Stream",
 			Bitrate:    "Original",
 			IsSelected: true,
 		})
@@ -172,18 +172,11 @@ func AnalyzeVideoURL(ctx context.Context, targetURL string) (*AnalysisResult, er
 		})
 	}
 
-	// If no stream candidate found, offer raw URL as fallback
+	// If no video candidate was found on the page
 	if len(result.Candidates) == 0 {
-		result.Candidates = append(result.Candidates, StreamCandidate{
-			URL:        targetURL,
-			Quality:    "Raw Passthrough",
-			Format:     "Stream Direct",
-			Bitrate:    "Unknown",
-			IsSelected: true,
-		})
-	} else {
-		result.Candidates[0].IsSelected = true
+		return nil, fmt.Errorf("no direct video stream (.m3u8 / .mp4) found on this page. If this site uses a custom embedded player, please copy the direct stream link (or inspect the Network tab for .m3u8), or stream the video file using 'Personal Local Files'")
 	}
+	result.Candidates[0].IsSelected = true
 
 	return result, nil
 }

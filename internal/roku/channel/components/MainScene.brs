@@ -3,81 +3,86 @@ sub init()
 
     ' Screen nodes
     m.dashboard = m.top.findNode("dashboard")
+    m.statusLabel = m.top.findNode("statusLabel")
     m.video = m.top.findNode("video")
+
     m.subtitleGroup = m.top.findNode("subtitleGroup")
     m.subtitleLabel = m.top.findNode("subtitleLabel")
     m.subtitleShadow = m.top.findNode("subtitleShadow")
-    m.subSyncOSD = m.top.findNode("subSyncOSD")
-    m.subSyncLabel = m.top.findNode("subSyncLabel")
-    m.subSyncTimer = m.top.findNode("subSyncTimer")
+    m.subtitleTimer = m.top.findNode("subtitleTimer")
+
     m.seekToast = m.top.findNode("seekToast")
     m.seekToastLabel = m.top.findNode("seekToastLabel")
     m.seekToastTimer = m.top.findNode("seekToastTimer")
-    m.subtitleTimer = m.top.findNode("subtitleTimer")
 
-    ' Configure video seek accuracy
     if m.video.seekMode <> invalid
         m.video.seekMode = "accurate"
     end if
 
-    ' OSD Nodes (Interactive Settings Deck)
-    m.osd = m.top.findNode("osd")
-    m.osdTitle = m.top.findNode("osdTitle")
-    m.osdRemaining = m.top.findNode("osdRemaining")
-    m.osdCurrentTime = m.top.findNode("osdCurrentTime")
-    m.osdTotalDuration = m.top.findNode("osdTotalDuration")
+    ' Main Player Deck nodes
+    m.deckGroup = m.top.findNode("deckGroup")
+    m.deckTitle = m.top.findNode("deckTitle")
+    m.deckBadge = m.top.findNode("deckBadge")
+    m.deckTime = m.top.findNode("deckTime")
     m.progressBarFill = m.top.findNode("progressBarFill")
-    m.osdTimer = m.top.findNode("osdTimer")
+    m.progressDot = m.top.findNode("progressDot")
 
-    ' Focusable Interactive Pills (6 pills)
-    m.pillResume = m.top.findNode("pillResume")
-    m.pillResumeLabel = m.top.findNode("pillResumeLabel")
-    m.pillSync = m.top.findNode("pillSync")
-    m.pillSyncLabel = m.top.findNode("pillSyncLabel")
-    m.pillStyle = m.top.findNode("pillStyle")
-    m.pillStyleLabel = m.top.findNode("pillStyleLabel")
-    m.pillAudio = m.top.findNode("pillAudio")
-    m.pillAudioLabel = m.top.findNode("pillAudioLabel")
-    m.pillToggle = m.top.findNode("pillToggle")
-    m.pillToggleLabel = m.top.findNode("pillToggleLabel")
-    m.pillQueue = m.top.findNode("pillQueue")
-    m.pillQueueLabel = m.top.findNode("pillQueueLabel")
+    m.card0Bg = m.top.findNode("card0Bg")
+    m.card0Label = m.top.findNode("card0Label")
+    m.card1Bg = m.top.findNode("card1Bg")
+    m.card1Label = m.top.findNode("card1Label")
+    m.card2Bg = m.top.findNode("card2Bg")
+    m.card2Label = m.top.findNode("card2Label")
+
+    ' Subtitle & Audio Side Drawer nodes
+    m.subPanelGroup = m.top.findNode("subPanelGroup")
+    m.subRow0Bg = m.top.findNode("subRow0Bg")
+    m.subRow0Val = m.top.findNode("subRow0Val")
+    m.subRow1Bg = m.top.findNode("subRow1Bg")
+    m.subRow1Val = m.top.findNode("subRow1Val")
+    m.subRow2Bg = m.top.findNode("subRow2Bg")
+    m.subRow2Val = m.top.findNode("subRow2Val")
+    m.subRow3Bg = m.top.findNode("subRow3Bg")
+    m.subRow3Val = m.top.findNode("subRow3Val")
+    m.subRow4Bg = m.top.findNode("subRow4Bg")
+    m.subRow4Val = m.top.findNode("subRow4Val")
+    m.subRow5Bg = m.top.findNode("subRow5Bg")
+    m.subRow5Val = m.top.findNode("subRow5Val")
+
+    ' State machine constants
+    m.STATE_PLAYING = 0
+    m.STATE_DECK = 1
+    m.STATE_SUB_PANEL = 2
+    m.currentState = m.STATE_PLAYING
+
+    ' Navigation indices
+    m.deckCardIndex = 0 ' 0=Resume, 1=Subtitles, 2=Next Video
+    m.subRowIndex = 0   ' 0..5
+
+    ' Subtitle & audio state
+    m.cues = []
+    m.subOffset = 0.0
+    m.subsVisible = true
+    m.subSizeIndex = 1  ' 0=Normal (30pt), 1=Large (42pt - default), 2=Huge (54pt)
+    m.subColorIndex = 0 ' 0=White, 1=Yellow, 2=Sky Blue
+    m.colors = ["0xFFFFFFFF", "0xFBBF24FF", "0x38BDF8FF"]
+    m.colorNames = ["White", "Yellow", "Sky Blue"]
+    m.sizeNames = ["Normal (30pt)", "Large (42pt)", "Huge (54pt)"]
+    m.subTracks = ["English [CC]", "OFF"]
+    m.subTrackIndex = 0
+    m.audioTracks = ["Track 1: Default"]
+    m.audioTrackIndex = 0
+    m.isShowingSample = false
+    m.callbackUrl = ""
+    m.currentTitle = "NOW PLAYING"
 
     ' Observers
     m.video.observeField("state", "onVideoStateChange")
     m.video.observeField("position", "onPositionChange")
-    m.subSyncTimer.observeField("fire", "hideSubSyncOSD")
     m.seekToastTimer.observeField("fire", "hideSeekToast")
-    m.osdTimer.observeField("fire", "hideOSD")
     m.subtitleTimer.observeField("fire", "updateSubtitleDisplay")
 
-    ' Internal state
-    m.cues = []
-    m.subOffset = 0.0
-    m.subsVisible = true
-    m.activePillIndex = 0
-    m.numPills = 6
-    m.pills = [m.pillResume, m.pillSync, m.pillStyle, m.pillAudio, m.pillToggle, m.pillQueue]
-    m.pillLabels = [m.pillResumeLabel, m.pillSyncLabel, m.pillStyleLabel, m.pillAudioLabel, m.pillToggleLabel, m.pillQueueLabel]
-
-    ' Subtitle Styling states
-    m.colorIndex = 0
-    m.colors = ["0xFFFFFFFF", "0xFBBF24FF", "0x38BDF8FF"]
-    m.colorNames = ["White", "Yellow", "Sky Blue"]
-
-    ' Current Video metadata
-    m.currentTitle = "UNKNOWN"
-    m.callbackUrl = ""
-
-    ' Set initial clean ASCII labels
-    if m.pillResumeLabel <> invalid then m.pillResumeLabel.text = "Resume [OK]"
-    if m.pillStyleLabel <> invalid then m.pillStyleLabel.text = "Style: White"
-    if m.pillAudioLabel <> invalid then m.pillAudioLabel.text = "Audio: Default"
-    if m.pillToggleLabel <> invalid then m.pillToggleLabel.text = "Subs: ON"
-    if m.pillQueueLabel <> invalid then m.pillQueueLabel.text = "Next Video >>"
-
-    updateSyncLabel()
-    updatePillVisuals()
+    applySubtitleStyle()
 end sub
 
 sub onArgs()
@@ -109,16 +114,25 @@ sub onArgs()
     else
         m.currentTitle = "NOW PLAYING"
     end if
-    m.osdTitle.text = UCase(m.currentTitle.ToStr())
+    m.deckTitle.text = UCase(m.currentTitle.ToStr())
 
     if offsetStr <> ""
         m.subOffset = Val(offsetStr)
     else
         m.subOffset = 0.0
     end if
-    updateSyncLabel()
 
-    ' Configure and launch video
+    ' Reset UI state
+    m.cues = []
+    m.subsVisible = true
+    m.subTrackIndex = 0
+    m.isShowingSample = false
+    m.subtitleGroup.visible = false
+    m.subtitleGroup.translation = [0, 0]
+    m.deckGroup.visible = false
+    m.subPanelGroup.visible = false
+    m.currentState = m.STATE_PLAYING
+
     m.dashboard.visible = false
     m.video.visible = true
 
@@ -126,7 +140,6 @@ sub onArgs()
     content.url = mediaUrl
     content.title = m.currentTitle
 
-    ' Determine stream format
     lUrl = LCase(mediaUrl)
     if InStr(1, lUrl, ".m3u8") > 0
         content.streamFormat = "hls"
@@ -142,18 +155,19 @@ sub onArgs()
 
     ' Fetch subtitles if provided
     if subUrl <> ""
+        m.subTracks = ["English [CC]", "OFF"]
         m.subTask = CreateObject("roSGNode", "SubtitleTask")
         m.subTask.observeField("cues", "onSubtitlesLoaded")
         m.subTask.url = subUrl
         m.subTask.control = "RUN"
     else
-        m.cues = []
-        m.subtitleGroup.visible = false
+        m.subTracks = ["OFF"]
+        m.subTrackIndex = 0
+        m.subsVisible = false
     end if
 
-    ' CRITICAL: Keep interactive controls INACTIVE while video is playing
-    ' Controls only become active when user presses OK to pause!
-    m.osd.visible = false
+    applySubtitleStyle()
+    showToast("Starting Playback")
 end sub
 
 sub onSubtitlesLoaded(event as Object)
@@ -166,15 +180,16 @@ end sub
 
 sub updateSubtitleDisplay()
     if not m.subsVisible or m.cues = invalid or m.cues.Count() = 0
-        m.subtitleLabel.text = ""
-        m.subtitleShadow.text = ""
+        if not m.isShowingSample
+            m.subtitleLabel.text = ""
+            m.subtitleShadow.text = ""
+        end if
         return
     end if
 
     vidPos = m.video.position + m.subOffset
     currentText = ""
 
-    ' Search for active cue
     for each cue in m.cues
         if vidPos >= cue.start and vidPos <= cue.endPos
             currentText = cue.text
@@ -184,9 +199,19 @@ sub updateSubtitleDisplay()
         end if
     end for
 
-    if m.subtitleLabel.text <> currentText
-        m.subtitleLabel.text = currentText
-        m.subtitleShadow.text = currentText
+    if currentText <> ""
+        if m.subtitleLabel.text <> currentText
+            m.subtitleLabel.text = currentText
+            m.subtitleShadow.text = currentText
+        end if
+        m.isShowingSample = false
+        m.subtitleGroup.visible = true
+    else
+        if not m.isShowingSample and m.subtitleLabel.text <> ""
+            m.subtitleLabel.text = ""
+            m.subtitleShadow.text = ""
+            m.subtitleGroup.visible = false
+        end if
     end if
 end sub
 
@@ -195,18 +220,16 @@ sub onPositionChange(event as Object)
     dur = m.video.duration
 
     if dur > 0
-        m.osdCurrentTime.text = formatTime(vidPos)
-        m.osdTotalDuration.text = formatTime(dur)
-
-        ' Time Remaining Countdown (-HH:MM:SS)
-        remSecs = dur - vidPos
-        if remSecs < 0 then remSecs = 0
-        m.osdRemaining.text = "-" + formatTime(remSecs)
-
-        ' Progress bar calculation (width out of 1480px)
+        m.deckTime.text = formatTime(vidPos) + " / " + formatTime(dur)
         ratio = vidPos / dur
         if ratio > 1.0 then ratio = 1.0
-        m.progressBarFill.width = Int(ratio * 1480)
+        fillWidth = Int(ratio * 1760)
+        m.progressBarFill.width = fillWidth
+        m.progressDot.translation = [80 + fillWidth - 8, 851]
+    else
+        m.deckTime.text = formatTime(vidPos)
+        m.progressBarFill.width = 0
+        m.progressDot.translation = [72, 851]
     end if
 end sub
 
@@ -228,12 +251,266 @@ function padZero(n as Integer) as String
     return n.ToStr()
 end function
 
+function formatOffset(offset as Float) as String
+    if offset > 0.0
+        return "+" + Str(offset).Trim() + "s"
+    else if offset < 0.0
+        return Str(offset).Trim() + "s"
+    else
+        return "0.0s (In Sync)"
+    end if
+end function
+
+sub showToast(msg as String)
+    if m.seekToast = invalid then return
+    m.seekToastLabel.text = msg
+    m.seekToast.visible = true
+    m.seekToastTimer.control = "stop"
+    m.seekToastTimer.control = "start"
+end sub
+
+sub hideSeekToast()
+    if m.seekToast <> invalid then m.seekToast.visible = false
+end sub
+
+sub showDeck()
+    if m.video = invalid then return
+    m.currentState = m.STATE_DECK
+    m.video.control = "pause"
+
+    ' Shift subtitles upward slightly while deck is open so subtitles don't overlap
+    m.subtitleGroup.translation = [0, -180]
+
+    m.deckCardIndex = 0
+    updateDeckCards()
+
+    m.deckGroup.visible = true
+    m.subPanelGroup.visible = false
+    m.top.setFocus(true)
+end sub
+
+sub resumePlayback()
+    if m.video = invalid then return
+    m.currentState = m.STATE_PLAYING
+    m.deckGroup.visible = false
+    m.subPanelGroup.visible = false
+    m.subtitleGroup.translation = [0, 0]
+
+    if m.isShowingSample
+        clearSubPreview()
+    end if
+
+    m.video.control = "resume"
+    showToast("> Playing")
+    m.top.setFocus(true)
+end sub
+
+sub openSubPanel()
+    m.currentState = m.STATE_SUB_PANEL
+    m.deckGroup.visible = false
+    m.subPanelGroup.visible = true
+    m.subRowIndex = 0
+
+    ' Refresh audio tracks from video if available
+    if m.video <> invalid and m.video.audioTracks <> invalid and m.video.audioTracks.Count() > 0
+        tracks = []
+        for i = 0 to m.video.audioTracks.Count() - 1
+            t = m.video.audioTracks[i]
+            desc = "Track " + (i + 1).ToStr()
+            if t.DoesExist("Track") and t.Track <> ""
+                desc = t.Track
+            end if
+            tracks.Push(desc)
+        end for
+        m.audioTracks = tracks
+    end if
+
+    updateSubPanelRows()
+    updateSubPanelFocus()
+    showSubPreview()
+    m.top.setFocus(true)
+end sub
+
+sub closeSubPanel()
+    clearSubPreview()
+    m.subPanelGroup.visible = false
+    m.currentState = m.STATE_DECK
+    m.deckGroup.visible = true
+    updateDeckCards()
+    m.top.setFocus(true)
+end sub
+
+sub stopPlayback()
+    if m.video <> invalid
+        m.video.control = "stop"
+        m.video.visible = false
+    end if
+    m.deckGroup.visible = false
+    m.subPanelGroup.visible = false
+    m.subtitleGroup.visible = false
+    m.subtitleGroup.translation = [0, 0]
+    m.seekToast.visible = false
+    m.subtitleTimer.control = "stop"
+    m.cues = []
+    m.isShowingSample = false
+    m.dashboard.visible = true
+    m.top.setFocus(true)
+end sub
+
+sub updateDeckCards()
+    if m.deckCardIndex = 0
+        m.card0Bg.color = "0x2563EBEE"
+        m.card0Label.color = "0xFFFFFFFF"
+        m.card1Bg.color = "0x1E293BEE"
+        m.card1Label.color = "0x94A3B8FF"
+        m.card2Bg.color = "0x1E293BEE"
+        m.card2Label.color = "0x94A3B8FF"
+    else if m.deckCardIndex = 1
+        m.card0Bg.color = "0x1E293BEE"
+        m.card0Label.color = "0x94A3B8FF"
+        m.card1Bg.color = "0x2563EBEE"
+        m.card1Label.color = "0xFFFFFFFF"
+        m.card2Bg.color = "0x1E293BEE"
+        m.card2Label.color = "0x94A3B8FF"
+    else
+        m.card0Bg.color = "0x1E293BEE"
+        m.card0Label.color = "0x94A3B8FF"
+        m.card1Bg.color = "0x1E293BEE"
+        m.card1Label.color = "0x94A3B8FF"
+        m.card2Bg.color = "0x2563EBEE"
+        m.card2Label.color = "0xFFFFFFFF"
+    end if
+end sub
+
+sub updateSubPanelFocus()
+    bgs = [m.subRow0Bg, m.subRow1Bg, m.subRow2Bg, m.subRow3Bg, m.subRow4Bg, m.subRow5Bg]
+    for i = 0 to 5
+        if i = m.subRowIndex
+            bgs[i].color = "0x2563EBEE"
+        else
+            bgs[i].color = "0x0F172ACC"
+        end if
+    end for
+end sub
+
+sub updateSubPanelRows()
+    if m.subTracks.Count() > 0 and m.subTrackIndex < m.subTracks.Count()
+        m.subRow0Val.text = "< " + m.subTracks[m.subTrackIndex] + " >"
+    else
+        m.subRow0Val.text = "< OFF >"
+    end if
+
+    m.subRow1Val.text = "< " + m.sizeNames[m.subSizeIndex] + " >"
+    m.subRow2Val.text = "< " + m.colorNames[m.subColorIndex] + " >"
+    m.subRow3Val.text = "< " + formatOffset(m.subOffset) + " >"
+
+    if m.audioTracks.Count() > 0 and m.audioTrackIndex < m.audioTracks.Count()
+        m.subRow4Val.text = "< " + m.audioTracks[m.audioTrackIndex] + " >"
+    else
+        m.subRow4Val.text = "< Default >"
+    end if
+end sub
+
+sub adjustSetting(rowIndex as Integer, delta as Integer)
+    if rowIndex = 0
+        if m.subTracks.Count() > 1
+            m.subTrackIndex = (m.subTrackIndex + delta + m.subTracks.Count()) Mod m.subTracks.Count()
+            trackName = m.subTracks[m.subTrackIndex]
+            if trackName = "OFF"
+                m.subsVisible = false
+                m.subtitleGroup.visible = false
+            else
+                m.subsVisible = true
+                showSubPreview()
+            end if
+        end if
+    else if rowIndex = 1
+        count = m.sizeNames.Count()
+        m.subSizeIndex = (m.subSizeIndex + delta + count) Mod count
+        applySubtitleStyle()
+    else if rowIndex = 2
+        count = m.colors.Count()
+        m.subColorIndex = (m.subColorIndex + delta + count) Mod count
+        applySubtitleStyle()
+    else if rowIndex = 3
+        if delta > 0
+            m.subOffset = m.subOffset + 0.5
+        else
+            m.subOffset = m.subOffset - 0.5
+        end if
+    else if rowIndex = 4
+        if m.audioTracks.Count() > 1
+            m.audioTrackIndex = (m.audioTrackIndex + delta + m.audioTracks.Count()) Mod m.audioTracks.Count()
+            if m.video <> invalid
+                m.video.currentAudioTrack = m.audioTrackIndex
+            end if
+        end if
+    end if
+
+    updateSubPanelRows()
+end sub
+
+sub applySubtitleStyle()
+    if m.subtitleLabel = invalid or m.subtitleShadow = invalid then return
+
+    m.subtitleLabel.color = m.colors[m.subColorIndex]
+
+    if m.subSizeIndex = 0
+        m.subtitleLabel.font = "font:MediumBoldSystemFont"
+        m.subtitleShadow.font = "font:MediumBoldSystemFont"
+        m.subtitleGroup.scale = [1.0, 1.0]
+    else if m.subSizeIndex = 1
+        m.subtitleLabel.font = "font:LargeBoldSystemFont"
+        m.subtitleShadow.font = "font:LargeBoldSystemFont"
+        m.subtitleGroup.scale = [1.0, 1.0]
+    else
+        m.subtitleLabel.font = "font:LargeBoldSystemFont"
+        m.subtitleShadow.font = "font:LargeBoldSystemFont"
+        m.subtitleGroup.scaleRotateCenter = [960, 930]
+        m.subtitleGroup.scale = [1.3, 1.3]
+    end if
+end sub
+
+sub showSubPreview()
+    if not m.subsVisible then return
+
+    if m.subtitleLabel.text = "" or not m.subtitleGroup.visible
+        sampleText = "[ Subtitle Preview - Audio Sync " + formatOffset(m.subOffset) + " ]"
+        m.subtitleLabel.text = sampleText
+        m.subtitleShadow.text = sampleText
+        m.isShowingSample = true
+    end if
+
+    applySubtitleStyle()
+    m.subtitleGroup.visible = true
+end sub
+
+sub clearSubPreview()
+    if m.isShowingSample
+        m.subtitleLabel.text = ""
+        m.subtitleShadow.text = ""
+        m.subtitleGroup.visible = false
+        m.isShowingSample = false
+    end if
+end sub
+
+sub seekRelative(seconds as Float)
+    if m.video = invalid or m.video.duration <= 0 then return
+    newPos = m.video.position + seconds
+    if newPos < 0 then newPos = 0
+    if newPos > m.video.duration then newPos = m.video.duration - 1
+    m.video.seek = newPos
+
+    sign = "+"
+    if seconds < 0 then sign = "-"
+    showToast(">> " + sign + Abs(seconds).ToStr() + "s (" + formatTime(newPos) + ")")
+end sub
+
 sub onVideoStateChange(event as Object)
     state = event.getData()
     print "MainScene: video state = " + state
 
     if state = "finished"
-        ' Playback finished, notify backend for playlist auto-advance
         if m.callbackUrl <> ""
             notifyBackend(m.callbackUrl + "?event=finished")
         end if
@@ -259,278 +536,106 @@ end sub
 ' ==============================================================
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if not press then return false
-
     lKey = LCase(key)
 
-    if not m.osd.visible
-        ' ==============================================================
-        ' CONTROLS ARE NOT ACTIVE (Video is Playing Normally)
-        ' Left / Right skips backward / forward.
-        ' OK pauses video and brings up the controls deck.
-        ' ==============================================================
-        if lKey = "ok"
-            ' Pause playback and show interactive settings menu
-            m.video.control = "pause"
-            m.activePillIndex = 0 ' Default focus on Resume [OK]
-            updatePillVisuals()
-            showOSD()
-            return true
-        else if lKey = "play"
-            togglePlayPause()
-            return true
-        else if lKey = "left" or lKey = "rewind" or lKey = "rev"
-            seekRelative(-15)
-            return true
-        else if lKey = "right" or lKey = "fastforward" or lKey = "fwd"
-            seekRelative(15)
-            return true
-        else if lKey = "replay" or lKey = "instantreplay"
-            seekRelative(-10)
-            return true
-        else if lKey = "up"
-            nudgeSync(0.5)
-            return true
-        else if lKey = "down"
-            nudgeSync(-0.5)
-            return true
-        else if lKey = "back"
-            stopPlayback()
-            return true
-        end if
-    else
-        ' ==============================================================
-        ' CONTROLS ARE ACTIVE (Video is Paused, Menu is Open)
-        ' Left / Right navigates through option pills.
-        ' Up / Down adjusts the focused setting.
-        ' OK selects / resumes.
-        ' Play / Back resumes playback and hides controls.
-        ' ==============================================================
-        m.osdTimer.control = "stop"
-        m.osdTimer.control = "start"
+    if m.video <> invalid and m.video.visible = true
 
-        if lKey = "left"
-            ' Navigate pill selection left
-            m.activePillIndex = (m.activePillIndex - 1 + m.numPills) Mod m.numPills
-            updatePillVisuals()
-            return true
-        else if lKey = "right"
-            ' Navigate pill selection right
-            m.activePillIndex = (m.activePillIndex + 1) Mod m.numPills
-            updatePillVisuals()
-            return true
-        else if lKey = "up"
-            handlePillAdjust("up")
-            return true
-        else if lKey = "down"
-            handlePillAdjust("down")
-            return true
-        else if lKey = "ok"
-            handlePillOK()
-            return true
-        else if lKey = "play" or lKey = "back"
-            ' Resume playback and dismiss controls
-            m.video.control = "resume"
-            hideOSD()
-            return true
-        else if lKey = "rewind" or lKey = "rev"
-            seekRelative(-15)
-            return true
-        else if lKey = "fastforward" or lKey = "fwd"
-            seekRelative(15)
-            return true
+        ' STATE 0: VIDEO PLAYING (UI HIDDEN)
+        if m.currentState = m.STATE_PLAYING
+            if lKey = "right" or lKey = "fastforward" or lKey = "fwd"
+                seekRelative(15)
+                return true
+            else if lKey = "left" or lKey = "rewind" or lKey = "rev"
+                seekRelative(-15)
+                return true
+            else if lKey = "replay" or lKey = "instantreplay"
+                seekRelative(-10)
+                return true
+            else if lKey = "ok" or lKey = "select" or lKey = "down" or lKey = "up"
+                showDeck()
+                return true
+            else if lKey = "play" or lKey = "pause"
+                if m.video.state = "paused"
+                    resumePlayback()
+                else
+                    showDeck()
+                end if
+                return true
+            else if lKey = "back"
+                stopPlayback()
+                return true
+            end if
+
+        ' STATE 1: MAIN PLAYER DECK (PAUSED)
+        else if m.currentState = m.STATE_DECK
+            if lKey = "left"
+                m.deckCardIndex = (m.deckCardIndex - 1 + 3) Mod 3
+                updateDeckCards()
+                return true
+            else if lKey = "right"
+                m.deckCardIndex = (m.deckCardIndex + 1) Mod 3
+                updateDeckCards()
+                return true
+            else if lKey = "play"
+                resumePlayback()
+                return true
+            else if lKey = "ok" or lKey = "select"
+                if m.deckCardIndex = 0
+                    resumePlayback()
+                else if m.deckCardIndex = 1
+                    openSubPanel()
+                else if m.deckCardIndex = 2
+                    ' Next Video / Skip
+                    if m.callbackUrl <> ""
+                        notifyBackend(m.callbackUrl + "?event=next")
+                    else
+                        stopPlayback()
+                    end if
+                end if
+                return true
+            else if lKey = "back"
+                resumePlayback()
+                return true
+            end if
+
+        ' STATE 2: SUBTITLE & AUDIO SIDE DRAWER
+        else if m.currentState = m.STATE_SUB_PANEL
+            if lKey = "up"
+                m.subRowIndex = (m.subRowIndex - 1 + 6) Mod 6
+                updateSubPanelFocus()
+                return true
+            else if lKey = "down"
+                m.subRowIndex = (m.subRowIndex + 1) Mod 6
+                updateSubPanelFocus()
+                return true
+            else if lKey = "left"
+                adjustSetting(m.subRowIndex, -1)
+                return true
+            else if lKey = "right"
+                adjustSetting(m.subRowIndex, 1)
+                return true
+            else if lKey = "ok" or lKey = "select"
+                if m.subRowIndex = 3
+                    m.subOffset = 0.0
+                    updateSubPanelRows()
+                    if m.isShowingSample
+                        sampleText = "[ Subtitle Preview - Audio Sync 0.0s ]"
+                        m.subtitleLabel.text = sampleText
+                        m.subtitleShadow.text = sampleText
+                    end if
+                else if m.subRowIndex = 5
+                    closeSubPanel()
+                else
+                    adjustSetting(m.subRowIndex, 1)
+                end if
+                return true
+            else if lKey = "back"
+                closeSubPanel()
+                return true
+            end if
         end if
+
     end if
 
     return false
 end function
-
-sub handlePillAdjust(direction as String)
-    delta = 0.5
-    if direction = "down" then delta = -0.5
-
-    if m.activePillIndex = 0
-        ' Pill 0: Resume
-        m.video.control = "resume"
-        hideOSD()
-    else if m.activePillIndex = 1
-        ' Pill 1: Subtitle Sync Offset
-        nudgeSync(delta)
-    else if m.activePillIndex = 2
-        ' Pill 2: Subtitle Style
-        if direction = "up"
-            m.colorIndex = (m.colorIndex + 1) Mod m.colors.Count()
-        else
-            m.colorIndex = (m.colorIndex - 1 + m.colors.Count()) Mod m.colors.Count()
-        end if
-        m.subtitleLabel.color = m.colors[m.colorIndex]
-        m.pillStyleLabel.text = "Style: " + m.colorNames[m.colorIndex]
-    else if m.activePillIndex = 3
-        ' Pill 3: Audio Track Switcher
-        switchAudioTrack()
-    else if m.activePillIndex = 4
-        ' Pill 4: Subtitles Toggle On/Off
-        toggleSubtitles()
-    else if m.activePillIndex = 5
-        ' Pill 5: Playlist Skip Next
-        if m.callbackUrl <> ""
-            notifyBackend(m.callbackUrl + "?event=next")
-        end if
-    end if
-end sub
-
-sub handlePillOK()
-    if m.activePillIndex = 0
-        ' Pill 0: Resume Playback
-        m.video.control = "resume"
-        hideOSD()
-    else if m.activePillIndex = 1
-        ' Pill 1: Subtitle Sync - nudge +0.5s on OK
-        nudgeSync(0.5)
-    else if m.activePillIndex = 2
-        ' Pill 2: Subtitle Style - cycle color on OK
-        m.colorIndex = (m.colorIndex + 1) Mod m.colors.Count()
-        m.subtitleLabel.color = m.colors[m.colorIndex]
-        m.pillStyleLabel.text = "Style: " + m.colorNames[m.colorIndex]
-    else if m.activePillIndex = 3
-        ' Pill 3: Audio Track Switcher
-        switchAudioTrack()
-    else if m.activePillIndex = 4
-        ' Pill 4: Subtitles Toggle On/Off
-        toggleSubtitles()
-    else if m.activePillIndex = 5
-        ' Pill 5: Playlist Skip Next
-        if m.callbackUrl <> ""
-            notifyBackend(m.callbackUrl + "?event=next")
-        end if
-    end if
-end sub
-
-sub switchAudioTrack()
-    tracks = m.video.audioTracks
-    if tracks <> invalid and tracks.Count() > 1
-        curIndex = m.video.currentAudioTrack
-        if curIndex = invalid then curIndex = 0
-        nextIndex = (curIndex + 1) Mod tracks.Count()
-        m.video.currentAudioTrack = nextIndex
-        trackName = "Track " + (nextIndex + 1).ToStr()
-        if tracks[nextIndex] <> invalid and tracks[nextIndex].DoesExist("Track")
-            trackName = tracks[nextIndex].Track
-        end if
-        m.pillAudioLabel.text = "Audio: " + trackName
-    else
-        m.pillAudioLabel.text = "Audio: Default"
-    end if
-end sub
-
-sub toggleSubtitles()
-    m.subsVisible = not m.subsVisible
-    m.subtitleGroup.visible = m.subsVisible
-    if m.subsVisible
-        m.pillToggleLabel.text = "Subs: ON"
-    else
-        m.pillToggleLabel.text = "Subs: OFF"
-    end if
-end sub
-
-sub updatePillVisuals()
-    for i = 0 to m.numPills - 1
-        if i = m.activePillIndex
-            m.pills[i].color = "0x38BDF8FF"
-            m.pillLabels[i].color = "0x090B10FF"
-        else
-            m.pills[i].color = "0x1E293BCC"
-            m.pillLabels[i].color = "0xE2E8F0FF"
-        end if
-    end for
-end sub
-
-sub nudgeSync(delta as Float)
-    m.subOffset = m.subOffset + delta
-    updateSyncLabel()
-    showSubSyncOSD()
-    updateSubtitleDisplay()
-end sub
-
-sub updateSyncLabel()
-    sign = ""
-    if m.subOffset > 0 then sign = "+"
-    offsetText = sign + m.subOffset.ToStr() + "s"
-    m.subSyncLabel.text = "Sub Sync: " + offsetText
-    m.pillSyncLabel.text = "Sync: " + offsetText + " [UP/DN]"
-end sub
-
-sub showSubSyncOSD()
-    m.subSyncOSD.visible = true
-    m.subSyncTimer.control = "stop"
-    m.subSyncTimer.control = "start"
-end sub
-
-sub hideSubSyncOSD()
-    m.subSyncOSD.visible = false
-end sub
-
-sub toggleOSD()
-    if m.osd.visible
-        m.video.control = "resume"
-        hideOSD()
-    else
-        m.video.control = "pause"
-        m.activePillIndex = 0
-        updatePillVisuals()
-        showOSD()
-    end if
-end sub
-
-sub showOSD()
-    m.osd.visible = true
-    m.osdTimer.duration = 10
-    m.osdTimer.control = "stop"
-    m.osdTimer.control = "start"
-end sub
-
-sub hideOSD()
-    m.osd.visible = false
-end sub
-
-sub seekRelative(deltaSeconds as Integer)
-    curPos = m.video.position
-    if curPos = invalid then curPos = 0.0
-    dur = m.video.duration
-    newPos = curPos + deltaSeconds
-    if newPos < 0 then newPos = 0
-    if dur > 0 and newPos > dur then newPos = dur
-
-    m.video.seek = newPos
-
-    ' Show quick feedback toast WITHOUT making the interactive controls deck active
-    direction = ">> +"
-    if deltaSeconds < 0 then direction = "<< "
-    m.seekToastLabel.text = direction + deltaSeconds.ToStr() + "s  [" + formatTime(newPos) + "]"
-    m.seekToast.visible = true
-    m.seekToastTimer.control = "stop"
-    m.seekToastTimer.control = "start"
-end sub
-
-sub hideSeekToast()
-    m.seekToast.visible = false
-end sub
-
-sub togglePlayPause()
-    if m.video.state = "playing"
-        m.video.control = "pause"
-        m.activePillIndex = 0
-        updatePillVisuals()
-        showOSD()
-    else
-        m.video.control = "resume"
-        hideOSD()
-    end if
-end sub
-
-sub stopPlayback()
-    m.video.control = "stop"
-    m.video.visible = false
-    m.subtitleGroup.visible = false
-    m.dashboard.visible = true
-    hideOSD()
-end sub

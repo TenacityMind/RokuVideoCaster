@@ -2,7 +2,7 @@
 
 A dedicated, lightweight video casting system built **exclusively for Roku TV**. 
 
-Cast personal local movies and online videos directly to your Roku TV with zero buffering, multi-track audio switching (Dolby Atmos / 5.1 passthrough), continuous playlists, and an interactive on-screen media player with real-time subtitle sync adjustment.
+Cast personal local movies and online videos directly to your Roku TV with zero buffering, multi-track audio switching (Dolby Atmos / 5.1 passthrough), continuous playlists, and an interactive on-screen media player with real-time subtitle font sizing and sync adjustment.
 
 ---
 
@@ -10,12 +10,18 @@ Cast personal local movies and online videos directly to your Roku TV with zero 
 
 - **📺 Roku TV Exclusive:** Zero DLNA or Chromecast overhead. Built specifically for Roku OS using the native SceneGraph framework.
 - **⚡ Hardware Direct Passthrough:** Direct hardware streaming for 4K UHD, HDR, and Dolby Atmos/5.1 surround sound without local transcoding.
-- **🎮 Interactive TV Player (Remote `OK` Key):**
-  - **Remaining Time Countdown:** Always see exact time left (`-XX:XX`).
-  - **Subtitle Controls:** Nudge sync timing `[-0.5s]` / `[+0.5s]` with instant zero-buffering response, toggle subtitle styles, or turn captions off.
-  - **Audio Track Switcher:** Easily toggle between embedded audio streams on your TV.
+- **🎮 Redesigned Cinematic TV Media Player:**
+  - **Discrete Seek vs. Menu Modes:** While playing, `Left`/`Right` directly skips backward/forward by 15s without menus getting in the way.
+  - **Main Player Deck (Remote `OK` Key):** Pauses video and shows progress bar, elapsed/total time, and 3 focused action cards: `[ > Resume ]`, `[ [CC] Subtitles & Audio ]`, and `[ >> Next Video ]`.
+  - **Dedicated Subtitle & Audio Drawer:** Sleek side panel with 6 easy vertical rows:
+    - **Subtitle Track:** Toggle tracks (`English [CC]` / `OFF`).
+    - **Subtitle Size:** Switch between `Normal (30pt)`, `Large (42pt - default)`, and `Huge (54pt)`.
+    - **Font Color:** Choose between `White`, `Yellow`, or `Sky Blue`.
+    - **Sync Timing:** Nudge timing by `±0.5s` with real-time zero-buffering response (`OK` resets to `0.0s`).
+    - **Audio Track:** Toggle between available embedded audio streams.
+    - **Live On-Screen Preview:** See your chosen font size and color live on screen before resuming playback!
 - **📁 Personal Local File Streaming:** Drop any `.mkv`, `.mp4`, `.mov`, or `.webm` file. Automatically inspects audio tracks and embedded subtitles using `ffprobe`.
-- **🌐 Online Video Stream Extractor:** Paste streaming links or video pages. Offers 1080p, 4K, and 720p stream quality selectors.
+- **🌐 Headless Chrome Stream Scraper:** Paste streaming links or video pages (e.g. `primeshows.org`, `flixer.su`). The built-in browser engine automatically navigates iframes, bypasses Cloudflare Turnstile, and extracts direct `.m3u8` streams and subtitles.
 - **💬 Flexible Subtitle Fallback:** If an online video lacks subtitles, pair it instantly with your own uploaded `.srt`/`.vtt` file or direct subtitle link.
 - **📑 Continuous Playlist Queue:** Queue multiple episodes or movies with auto-advance to the next video when finished.
 - **🚀 Standalone Single Binary:** macOS and Windows single-file executables with embedded web dashboard. No Node.js, Go, or Python needed to run!
@@ -59,15 +65,20 @@ Download `roku-caster-win.exe` and double-click to launch.
 
 ---
 
-## 🎮 Remote Control Shortcuts
+## 🎮 Remote Navigation Shortcuts
 
-| Remote Button | Action When Menu Closed | Action When Menu Open (`OK`) |
-|:---:|:---:|:---:|
-| **`OK`** | Opens the Interactive OSD Menu | Toggles active setting / closes menu |
-| **`▲ / ▼` (Up / Down)** | Quick Subtitle Sync Nudge (`±0.5s`) | Navigate control pills |
-| **`◀ / ▶` (Left / Right)** | 15s Skip Backward / Forward | Adjust sync offset / cycle text color |
-| **`Play / Pause`** | Play / Pause video | Play / Pause video |
-| **`Back`** | Stop playback & return to dashboard | Close menu |
+| Mode | Remote Key | Action |
+| :--- | :--- | :--- |
+| **Video Playing** | **`Left` / `Right`** | **Skip -15s / +15s** (No menus) |
+| | **`OK` / `Pause` / `Down`** | **Pause video** & open Main Deck |
+| | **`Back`** | Stop playback & exit to Dashboard |
+| **Main Deck (Paused)** | **`Left` / `Right`** | Select `[Resume]`, `[Subtitles & Audio]`, or `[Next Video]` |
+| | **`OK`** on Subtitles | Opens Subtitle & Audio Side Drawer |
+| | **`Play` / `Back`** | Resume playback |
+| **Subtitle Drawer** | **`Up` / `Down`** | Move between setting rows (Track, Size, Color, Sync, Audio, Done) |
+| | **`Left` / `Right`** | Change or cycle value for selected row |
+| | **`OK` on Sync** | Reset sync timing to `0.0s (In Sync)` |
+| | **`OK` on Done** / **`Back`** | Return to Main Deck / resume video |
 
 ---
 
@@ -96,6 +107,15 @@ make build-all
 
 The `android/` directory contains an Android Studio project with an `ACTION_SEND` intent filter.
 When you tap **Share** in mobile Chrome or Brave on any video link, choose **"Roku Video Caster"** to instantly send the video to your Roku TV!
+
+---
+
+## 🙏 Acknowledgements & Credits
+
+Special thanks to the [Castor](https://github.com/stupside/castor) project by [stupside](https://github.com/stupside) for:
+- The automated headless Chrome scraping architecture and stealth browser techniques.
+- Turnstile challenge evasion and automated video player evaluation methods.
+- Foundational direct media streaming and subtitle synchronization concepts.
 
 ---
 

@@ -11,7 +11,7 @@
     <Group id="dashboard" visible="true">
       <Poster id="logo" uri="pkg:/images/icon_focus_fhd.png" width="240" height="180" translation="[840, 160]" />
       <Label text="Roku Video Caster" horizAlign="center" width="1920" translation="[0, 370]" font="font:LargeBoldSystemFont" color="0x38bdf8FF" />
-      <Label id="statusLabel" text="READY TO CAST" horizAlign="center" width="1920" translation="[0, 430]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
+      <Label id="statusLabel" text="* READY TO CAST" horizAlign="center" width="1920" translation="[0, 430]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
 
       <!-- Modern Frosted Glass Card -->
       <Rectangle width="900" height="260" translation="[510, 500]" color="0x121620EE">
@@ -29,18 +29,10 @@
       <Label id="subtitleLabel" text="" horizAlign="center" vertAlign="bottom" width="1640" height="180" translation="[140, 830]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" wrap="true" maxLines="3" />
     </Group>
 
-    <!-- Subtitle Sync Quick Toast (Up/Down remote keys) -->
-    <Group id="subSyncOSD" visible="false">
-      <Rectangle width="400" height="60" translation="[760, 60]" color="0x090b10F0">
-        <Label id="subSyncLabel" text="Sub Sync: 0.0s" horizAlign="center" vertAlign="center" width="400" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" />
-      </Rectangle>
-    </Group>
-    <Timer id="subSyncTimer" repeat="false" duration="2" />
-
     <!-- Seek Quick Toast (Left/Right remote keys when video is playing) -->
     <Group id="seekToast" visible="false">
       <Rectangle width="460" height="60" translation="[730, 60]" color="0x090b10F0">
-        <Label id="seekToastLabel" text="&gt;&gt; +15s" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" />
+        <Label id="seekToastLabel" text="&gt;&gt; +15s (00:00)" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" />
       </Rectangle>
     </Group>
     <Timer id="seekToastTimer" repeat="false" duration="1.5" />
@@ -49,66 +41,84 @@
     <Timer id="subtitleTimer" repeat="true" duration="0.25" />
 
     <!-- ============================================================ -->
-    <!-- INTERACTIVE ON-SCREEN DISPLAY (OSD) - Triggered by Remote OK -->
+    <!-- MAIN PLAYER DECK (Shown when Paused)                         -->
     <!-- ============================================================ -->
-    <Group id="osd" visible="false">
-      
-      <!-- Top Vignette and Cinematic Header -->
-      <Rectangle width="1920" height="140" translation="[0, 0]" color="0x090b10D9" />
-      <Label id="osdTitle" text="NOW PLAYING" translation="[80, 40]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="1200" />
-      <Label id="osdRemaining" text="-00:00:00" translation="[1440, 40]" font="font:LargeBoldSystemFont" color="0xfbbf24FF" horizAlign="right" width="400" />
-      <Label id="osdRemainingTag" text="TIME REMAINING" translation="[1440, 85]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="400" />
+    <Group id="deckGroup" visible="false">
+      <!-- Dark gradient scrim -->
+      <Rectangle width="1920" height="340" translation="[0, 740]" color="0x0b0f19F2" />
+      <Rectangle width="1920" height="2" translation="[0, 740]" color="0x38bdf844" />
 
-      <!-- Bottom Interactive Control Deck -->
-      <Rectangle width="1920" height="240" translation="[0, 840]" color="0x090b10E6" />
+      <!-- Title & Time Remaining Badge -->
+      <Label id="deckTitle" text="NOW PLAYING" translation="[80, 765]" font="font:LargeBoldSystemFont" color="0xffffffff" width="1200" />
+      <Label id="deckBadge" text="PAUSED" translation="[80, 815]" font="font:SmallBoldSystemFont" color="0x38bdf8FF" width="200" />
+      <Label id="deckTime" text="00:00 / 00:00" translation="[1440, 815]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="400" />
 
-      <!-- Scrubber Timeline -->
-      <Label id="osdCurrentTime" text="00:00:00" translation="[80, 865]" font="font:MediumBoldSystemFont" color="0xe2e8f0FF" width="160" />
-      <Rectangle id="progressBarBg" width="1480" height="8" translation="[220, 878]" color="0x334155FF">
-        <Rectangle id="progressBarFill" width="0" height="8" translation="[0, 0]" color="0x38bdf8FF" />
-      </Rectangle>
-      <Label id="osdTotalDuration" text="00:00:00" translation="[1720, 865]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="120" />
+      <!-- Scrub / Progress Bar -->
+      <Rectangle width="1760" height="8" translation="[80, 855]" color="0x334155FF" />
+      <Rectangle id="progressBarFill" width="0" height="8" translation="[80, 855]" color="0x38bdf8FF" />
+      <Rectangle id="progressDot" width="16" height="16" translation="[72, 851]" color="0xffffffff" />
 
-      <!-- Remote Focusable Pills (Centered, No Unicode Box Glitches) -->
-      <Group id="osdPills" translation="[170, 915]">
-        <!-- Pill 0: Resume Playback -->
-        <Rectangle id="pillResume" width="200" height="52" translation="[0, 0]" color="0x38bdf8FF">
-          <Label id="pillResumeLabel" text="Resume [OK]" horizAlign="center" vertAlign="center" width="200" height="52" font="font:SmallBoldSystemFont" color="0x090b10FF" />
-        </Rectangle>
+      <!-- Deck Action Cards -->
+      <!-- Card 0: Resume -->
+      <Rectangle id="card0Bg" width="360" height="75" translation="[80, 890]" color="0x2563EBEE" />
+      <Label id="card0Label" text="&gt; Resume [OK]" translation="[80, 915]" font="font:MediumBoldSystemFont" color="0xffffffff" width="360" horizAlign="center" />
 
-        <!-- Pill 1: Subtitle Sync Adjustment -->
-        <Rectangle id="pillSync" width="340" height="52" translation="[220, 0]" color="0x1e293bCC">
-          <Label id="pillSyncLabel" text="Sync: 0.0s [UP/DN]" horizAlign="center" vertAlign="center" width="340" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
-        </Rectangle>
+      <!-- Card 1: Subtitles & Audio -->
+      <Rectangle id="card1Bg" width="440" height="75" translation="[470, 890]" color="0x1e293bEE" />
+      <Label id="card1Label" text="[CC] Subtitles &amp; Audio" translation="[470, 915]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" width="440" horizAlign="center" />
 
-        <!-- Pill 2: Subtitle Styling (Size & Color) -->
-        <Rectangle id="pillStyle" width="240" height="52" translation="[580, 0]" color="0x1e293bCC">
-          <Label id="pillStyleLabel" text="Style: White" horizAlign="center" vertAlign="center" width="240" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
-        </Rectangle>
+      <!-- Card 2: Next / Stop -->
+      <Rectangle id="card2Bg" width="340" height="75" translation="[940, 890]" color="0x1e293bEE" />
+      <Label id="card2Label" text="&gt;&gt; Next Video" translation="[940, 915]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" width="340" horizAlign="center" />
 
-        <!-- Pill 3: Audio Track Switcher -->
-        <Rectangle id="pillAudio" width="240" height="52" translation="[840, 0]" color="0x1e293bCC">
-          <Label id="pillAudioLabel" text="Audio: Track 1" horizAlign="center" vertAlign="center" width="240" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
-        </Rectangle>
-
-        <!-- Pill 4: Subtitles Toggle On/Off -->
-        <Rectangle id="pillToggle" width="200" height="52" translation="[1100, 0]" color="0x1e293bCC">
-          <Label id="pillToggleLabel" text="Subs: ON" horizAlign="center" vertAlign="center" width="200" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
-        </Rectangle>
-
-        <!-- Pill 5: Up Next / Playlist -->
-        <Rectangle id="pillQueue" width="260" height="52" translation="[1320, 0]" color="0x1e293bCC">
-          <Label id="pillQueueLabel" text="Next Video >>" horizAlign="center" vertAlign="center" width="260" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
-        </Rectangle>
-      </Group>
-
-      <!-- Remote Control Legend Helper (Clean ASCII) -->
-      <Label id="osdHint" text="[LEFT / RIGHT] Select Option   |   [UP / DOWN] Adjust Setting   |   [OK] Select / Resume" translation="[80, 995]" font="font:SmallSystemFont" color="0x94a3b8FF" width="1760" horizAlign="center" />
+      <!-- Help hint -->
+      <Label text="Left / Right: Select Card   |   OK: Choose   |   Play: Resume Video   |   Back: Resume" translation="[80, 995]" font="font:SmallSystemFont" color="0x64748bFF" width="1760" />
     </Group>
 
-    <!-- Auto-hide Timer for OSD (disappears after 6s of inactivity) -->
-    <Timer id="osdTimer" repeat="false" duration="6" />
+    <!-- ============================================================ -->
+    <!-- SUBTITLE & AUDIO SIDE PANEL DRAWER                           -->
+    <!-- ============================================================ -->
+    <Group id="subPanelGroup" visible="false">
+      <!-- Dark backdrop on right side -->
+      <Rectangle width="560" height="1080" translation="[1360, 0]" color="0x0a0f1dFA" />
+      <Rectangle width="3" height="1080" translation="[1360, 0]" color="0x38bdf888" />
 
+      <!-- Panel Title -->
+      <Label text="SUBTITLES &amp; AUDIO" translation="[1400, 50]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" width="480" />
+      <Rectangle width="480" height="1" translation="[1400, 95]" color="0x334155FF" />
+
+      <!-- Row 0: Subtitle Track -->
+      <Rectangle id="subRow0Bg" width="480" height="75" translation="[1400, 115]" color="0x2563EBEE" />
+      <Label text="Subtitle Track" translation="[1420, 123]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
+      <Label id="subRow0Val" text="&lt; English [CC] &gt;" translation="[1420, 150]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+
+      <!-- Row 1: Subtitle Size -->
+      <Rectangle id="subRow1Bg" width="480" height="75" translation="[1400, 205]" color="0x0f172aEE" />
+      <Label text="Subtitle Size" translation="[1420, 213]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
+      <Label id="subRow1Val" text="&lt; Large (42pt) &gt;" translation="[1420, 240]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+
+      <!-- Row 2: Text Color -->
+      <Rectangle id="subRow2Bg" width="480" height="75" translation="[1400, 295]" color="0x0f172aEE" />
+      <Label text="Font Color" translation="[1420, 303]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
+      <Label id="subRow2Val" text="&lt; White &gt;" translation="[1420, 330]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+
+      <!-- Row 3: Sync Timing -->
+      <Rectangle id="subRow3Bg" width="480" height="75" translation="[1400, 385]" color="0x0f172aEE" />
+      <Label text="Subtitle Sync (Left/Right nudges, OK resets)" translation="[1420, 393]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
+      <Label id="subRow3Val" text="&lt; 0.0s (In Sync) &gt;" translation="[1420, 420]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+
+      <!-- Row 4: Audio Track -->
+      <Rectangle id="subRow4Bg" width="480" height="75" translation="[1400, 475]" color="0x0f172aEE" />
+      <Label text="Audio Track" translation="[1420, 483]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
+      <Label id="subRow4Val" text="&lt; Track 1: Default &gt;" translation="[1420, 510]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+
+      <!-- Row 5: Done Button -->
+      <Rectangle id="subRow5Bg" width="480" height="60" translation="[1400, 565]" color="0x0f172aEE" />
+      <Label id="subRow5Val" text="[ Done &amp; Close (OK) ]" translation="[1400, 582]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" width="480" horizAlign="center" />
+
+      <!-- Drawer Help Legend -->
+      <Label text="Up / Down: Choose Setting&#xA;Left / Right: Change Value&#xA;OK on Sync: Reset to 0.0s&#xA;Back / OK on Done: Return to Player" translation="[1400, 660]" font="font:SmallSystemFont" color="0x64748bFF" width="480" wrap="true" />
+    </Group>
   </children>
   <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
 </component>

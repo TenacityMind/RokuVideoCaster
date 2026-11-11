@@ -21,7 +21,9 @@ sub init()
     m.progressBarFill = m.top.findNode("progressBarFill")
     m.osdTimer = m.top.findNode("osdTimer")
 
-    ' Focusable Pills
+    ' Focusable Interactive Pills (6 pills)
+    m.pillResume = m.top.findNode("pillResume")
+    m.pillResumeLabel = m.top.findNode("pillResumeLabel")
     m.pillSync = m.top.findNode("pillSync")
     m.pillSyncLabel = m.top.findNode("pillSyncLabel")
     m.pillStyle = m.top.findNode("pillStyle")
@@ -45,9 +47,9 @@ sub init()
     m.subOffset = 0.0
     m.subsVisible = true
     m.activePillIndex = 0
-    m.numPills = 5
-    m.pills = [m.pillSync, m.pillStyle, m.pillAudio, m.pillToggle, m.pillQueue]
-    m.pillLabels = [m.pillSyncLabel, m.pillStyleLabel, m.pillAudioLabel, m.pillToggleLabel, m.pillQueueLabel]
+    m.numPills = 6
+    m.pills = [m.pillResume, m.pillSync, m.pillStyle, m.pillAudio, m.pillToggle, m.pillQueue]
+    m.pillLabels = [m.pillResumeLabel, m.pillSyncLabel, m.pillStyleLabel, m.pillAudioLabel, m.pillToggleLabel, m.pillQueueLabel]
 
     ' Subtitle Styling states
     m.colorIndex = 0
@@ -58,6 +60,14 @@ sub init()
     m.currentTitle = "UNKNOWN"
     m.callbackUrl = ""
 
+    ' Set initial clean ASCII labels
+    if m.pillResumeLabel <> invalid then m.pillResumeLabel.text = "Resume [OK]"
+    if m.pillStyleLabel <> invalid then m.pillStyleLabel.text = "Style: White"
+    if m.pillAudioLabel <> invalid then m.pillAudioLabel.text = "Audio: Default"
+    if m.pillToggleLabel <> invalid then m.pillToggleLabel.text = "Subs: ON"
+    if m.pillQueueLabel <> invalid then m.pillQueueLabel.text = "Next Video >>"
+
+    updateSyncLabel()
     updatePillVisuals()
 end sub
 
@@ -242,39 +252,52 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
 
     lKey = LCase(key)
 
-    if lKey = "ok"
-        toggleOSD()
-        return true
-    end if
-
     if m.osd.visible
+        ' OSD is currently active (video is paused)
         m.osdTimer.control = "stop"
         m.osdTimer.control = "start"
 
-        if lKey = "up"
-            ' Navigate to previous pill
+        if lKey = "left"
+            ' Navigate pill selection left
             m.activePillIndex = (m.activePillIndex - 1 + m.numPills) Mod m.numPills
             updatePillVisuals()
             return true
-        else if lKey = "down"
-            ' Navigate to next pill
+        else if lKey = "right"
+            ' Navigate pill selection right
             m.activePillIndex = (m.activePillIndex + 1) Mod m.numPills
             updatePillVisuals()
             return true
-        else if lKey = "left" or lKey = "right"
-            handlePillAction(lKey)
+        else if lKey = "up"
+            handlePillAdjust("up")
+            return true
+        else if lKey = "down"
+            handlePillAdjust("down")
+            return true
+        else if lKey = "ok"
+            handlePillOK()
+            return true
+        else if lKey = "play"
+            ' Resume playback and dismiss OSD
+            m.video.control = "resume"
+            hideOSD()
             return true
         else if lKey = "back"
+            ' Dismiss OSD and resume playback
+            m.video.control = "resume"
             hideOSD()
             return true
         end if
     else
-        ' Direct Shortcuts when OSD is closed
-        if lKey = "up"
-            nudgeSync(0.5)
+        ' Video is playing and OSD is closed
+        if lKey = "ok"
+            ' Pause playback and show interactive settings menu
+            m.video.control = "pause"
+            m.activePillIndex = 0 ' Default focus on Resume [OK]
+            updatePillVisuals()
+            showOSD()
             return true
-        else if lKey = "down"
-            nudgeSync(-0.5)
+        else if lKey = "play"
+            togglePlayPause()
             return true
         else if lKey = "left"
             seekRelative(-15)
@@ -282,8 +305,11 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         else if lKey = "right"
             seekRelative(15)
             return true
-        else if lKey = "play"
-            togglePlayPause()
+        else if lKey = "up"
+            nudgeSync(0.5)
+            return true
+        else if lKey = "down"
+            nudgeSync(-0.5)
             return true
         else if lKey = "back"
             stopPlayback()
@@ -294,39 +320,91 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     return false
 end function
 
-sub handlePillAction(direction as String)
-    delta = 1
-    if direction = "left" then delta = -1
+sub handlePillAdjust(direction as String)
+    delta = 0.5
+    if direction = "down" then delta = -0.5
 
     if m.activePillIndex = 0
-        ' Pill 0: Subtitle Sync Offset
-        if delta > 0
-            nudgeSync(0.5)
-        else
-            nudgeSync(-0.5)
-        end if
+        ' Pill 0: Resume
+        m.video.control = "resume"
+        hideOSD()
     else if m.activePillIndex = 1
-        ' Pill 1: Subtitle Style
-        m.colorIndex = (m.colorIndex + 1) Mod m.colors.Count()
-        m.subtitleLabel.color = m.colors[m.colorIndex]
-        m.pillStyleLabel.text = "🎨 Text: " + m.colorNames[m.colorIndex]
+        ' Pill 1: Subtitle Sync Offset
+        nudgeSync(delta)
     else if m.activePillIndex = 2
-        ' Pill 2: Audio Track Switcher
-        m.pillAudioLabel.text = "🔊 Audio: Direct Direct"
-    else if m.activePillIndex = 3
-        ' Pill 3: Subtitles On/Off
-        m.subsVisible = not m.subsVisible
-        m.subtitleGroup.visible = m.subsVisible
-        if m.subsVisible
-            m.pillToggleLabel.text = "✓ Subs: ON"
+        ' Pill 2: Subtitle Style
+        if direction = "up"
+            m.colorIndex = (m.colorIndex + 1) Mod m.colors.Count()
         else
-            m.pillToggleLabel.text = "✕ Subs: OFF"
+            m.colorIndex = (m.colorIndex - 1 + m.colors.Count()) Mod m.colors.Count()
         end if
+        m.subtitleLabel.color = m.colors[m.colorIndex]
+        m.pillStyleLabel.text = "Style: " + m.colorNames[m.colorIndex]
+    else if m.activePillIndex = 3
+        ' Pill 3: Audio Track Switcher
+        switchAudioTrack()
     else if m.activePillIndex = 4
-        ' Pill 4: Playlist Skip Next
+        ' Pill 4: Subtitles Toggle On/Off
+        toggleSubtitles()
+    else if m.activePillIndex = 5
+        ' Pill 5: Playlist Skip Next
         if m.callbackUrl <> ""
             notifyBackend(m.callbackUrl + "?event=next")
         end if
+    end if
+end sub
+
+sub handlePillOK()
+    if m.activePillIndex = 0
+        ' Pill 0: Resume Playback
+        m.video.control = "resume"
+        hideOSD()
+    else if m.activePillIndex = 1
+        ' Pill 1: Subtitle Sync - nudge +0.5s on OK
+        nudgeSync(0.5)
+    else if m.activePillIndex = 2
+        ' Pill 2: Subtitle Style - cycle color on OK
+        m.colorIndex = (m.colorIndex + 1) Mod m.colors.Count()
+        m.subtitleLabel.color = m.colors[m.colorIndex]
+        m.pillStyleLabel.text = "Style: " + m.colorNames[m.colorIndex]
+    else if m.activePillIndex = 3
+        ' Pill 3: Audio Track Switcher
+        switchAudioTrack()
+    else if m.activePillIndex = 4
+        ' Pill 4: Subtitles Toggle On/Off
+        toggleSubtitles()
+    else if m.activePillIndex = 5
+        ' Pill 5: Playlist Skip Next
+        if m.callbackUrl <> ""
+            notifyBackend(m.callbackUrl + "?event=next")
+        end if
+    end if
+end sub
+
+sub switchAudioTrack()
+    tracks = m.video.audioTracks
+    if tracks <> invalid and tracks.Count() > 1
+        curIndex = m.video.currentAudioTrack
+        if curIndex = invalid then curIndex = 0
+        nextIndex = (curIndex + 1) Mod tracks.Count()
+        m.video.currentAudioTrack = nextIndex
+        trackName = "Track " + (nextIndex + 1).ToStr()
+        if tracks[nextIndex] <> invalid and tracks[nextIndex].DoesExist("Track")
+            trackName = tracks[nextIndex].Track
+        end if
+        m.pillAudioLabel.text = "Audio: " + trackName
+    else
+        m.pillAudioLabel.text = "Audio: Default"
+    end if
+end sub
+
+sub toggleSubtitles()
+    m.subsVisible = not m.subsVisible
+    m.subtitleGroup.visible = m.subsVisible
+    if m.subsVisible
+        m.pillToggleLabel.text = "Subs: ON"
+    else
+        m.pillToggleLabel.text = "Subs: OFF"
     end if
 end sub
 
@@ -354,7 +432,7 @@ sub updateSyncLabel()
     if m.subOffset > 0 then sign = "+"
     offsetText = sign + m.subOffset.ToStr() + "s"
     m.subSyncLabel.text = "Sub Sync: " + offsetText
-    m.pillSyncLabel.text = "💬 Sub Sync: " + offsetText + " [◀ / ▶]"
+    m.pillSyncLabel.text = "Sync: " + offsetText + " [UP/DN]"
 end sub
 
 sub showSubSyncOSD()
@@ -369,14 +447,19 @@ end sub
 
 sub toggleOSD()
     if m.osd.visible
+        m.video.control = "resume"
         hideOSD()
     else
+        m.video.control = "pause"
+        m.activePillIndex = 0
+        updatePillVisuals()
         showOSD()
     end if
 end sub
 
 sub showOSD()
     m.osd.visible = true
+    m.osdTimer.duration = 10
     m.osdTimer.control = "stop"
     m.osdTimer.control = "start"
 end sub

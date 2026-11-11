@@ -11,12 +11,12 @@
     <Group id="dashboard" visible="true">
       <Poster id="logo" uri="pkg:/images/icon_focus_fhd.png" width="240" height="180" translation="[840, 160]" />
       <Label text="Roku Video Caster" horizAlign="center" width="1920" translation="[0, 370]" font="font:LargeBoldSystemFont" color="0x38bdf8FF" />
-      <Label id="statusLabel" text="● Ready to Cast" horizAlign="center" width="1920" translation="[0, 430]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
+      <Label id="statusLabel" text="READY TO CAST" horizAlign="center" width="1920" translation="[0, 430]" font="font:MediumBoldSystemFont" color="0x34d399FF" />
 
       <!-- Modern Frosted Glass Card -->
       <Rectangle width="900" height="260" translation="[510, 500]" color="0x121620EE">
         <Label text="Open the Web Dashboard on your computer or phone:&#xA;http://localhost:8080&#xA;&#xA;Direct passthrough enabled for 4K UHD, Dolby Atmos &amp; Subtitles" horizAlign="center" width="860" height="180" translation="[20, 35]" font="font:MediumSystemFont" color="0xe2e8f0FF" wrap="true" />
-        <Label id="deviceInfo" text="Roku TV Native Engine • Version 2.0" horizAlign="center" width="860" translation="[20, 205]" font="font:SmallSystemFont" color="0x94a3b8FF" />
+        <Label id="deviceInfo" text="Roku TV Native Engine | Version 2.0" horizAlign="center" width="860" translation="[20, 205]" font="font:SmallSystemFont" color="0x94a3b8FF" />
       </Rectangle>
     </Group>
 
@@ -61,36 +61,41 @@
       </Rectangle>
       <Label id="osdTotalDuration" text="00:00:00" translation="[1720, 865]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="120" />
 
-      <!-- Remote Focusable Pills -->
-      <Group id="osdPills" translation="[80, 915]">
+      <!-- Remote Focusable Pills (Centered, No Unicode Box Glitches) -->
+      <Group id="osdPills" translation="[170, 915]">
+        <!-- Pill 0: Resume Playback -->
+        <Rectangle id="pillResume" width="200" height="52" translation="[0, 0]" color="0x38bdf8FF">
+          <Label id="pillResumeLabel" text="Resume [OK]" horizAlign="center" vertAlign="center" width="200" height="52" font="font:SmallBoldSystemFont" color="0x090b10FF" />
+        </Rectangle>
+
         <!-- Pill 1: Subtitle Sync Adjustment -->
-        <Rectangle id="pillSync" width="360" height="52" translation="[0, 0]" color="0x38bdf8FF">
-          <Label id="pillSyncLabel" text="💬 Sub Sync: 0.0s [◀ / ▶]" horizAlign="center" vertAlign="center" width="360" height="52" font="font:SmallBoldSystemFont" color="0x090b10FF" />
+        <Rectangle id="pillSync" width="340" height="52" translation="[220, 0]" color="0x1e293bCC">
+          <Label id="pillSyncLabel" text="Sync: 0.0s [UP/DN]" horizAlign="center" vertAlign="center" width="340" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
         </Rectangle>
 
         <!-- Pill 2: Subtitle Styling (Size & Color) -->
-        <Rectangle id="pillStyle" width="280" height="52" translation="[380, 0]" color="0x1e293bCC">
-          <Label id="pillStyleLabel" text="🎨 Text: White Large" horizAlign="center" vertAlign="center" width="280" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        <Rectangle id="pillStyle" width="240" height="52" translation="[580, 0]" color="0x1e293bCC">
+          <Label id="pillStyleLabel" text="Style: White" horizAlign="center" vertAlign="center" width="240" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
         </Rectangle>
 
         <!-- Pill 3: Audio Track Switcher -->
-        <Rectangle id="pillAudio" width="280" height="52" translation="[680, 0]" color="0x1e293bCC">
-          <Label id="pillAudioLabel" text="🔊 Audio: Track 1" horizAlign="center" vertAlign="center" width="280" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        <Rectangle id="pillAudio" width="240" height="52" translation="[840, 0]" color="0x1e293bCC">
+          <Label id="pillAudioLabel" text="Audio: Track 1" horizAlign="center" vertAlign="center" width="240" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
         </Rectangle>
 
         <!-- Pill 4: Subtitles Toggle On/Off -->
-        <Rectangle id="pillToggle" width="220" height="52" translation="[980, 0]" color="0x1e293bCC">
-          <Label id="pillToggleLabel" text="✓ Subs: ON" horizAlign="center" vertAlign="center" width="220" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        <Rectangle id="pillToggle" width="200" height="52" translation="[1100, 0]" color="0x1e293bCC">
+          <Label id="pillToggleLabel" text="Subs: ON" horizAlign="center" vertAlign="center" width="200" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
         </Rectangle>
 
         <!-- Pill 5: Up Next / Playlist -->
-        <Rectangle id="pillQueue" width="300" height="52" translation="[1220, 0]" color="0x1e293bCC">
-          <Label id="pillQueueLabel" text="📑 Next in Queue ▶" horizAlign="center" vertAlign="center" width="300" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
+        <Rectangle id="pillQueue" width="260" height="52" translation="[1320, 0]" color="0x1e293bCC">
+          <Label id="pillQueueLabel" text="Next Video >>" horizAlign="center" vertAlign="center" width="260" height="52" font="font:SmallBoldSystemFont" color="0xe2e8f0FF" />
         </Rectangle>
       </Group>
 
-      <!-- Remote Control Legend Helper -->
-      <Label id="osdHint" text="[OK] Close Menu   •   [◀ / ▶] Change Value / Seek   •   [▲ / ▼] Switch Setting" translation="[80, 995]" font="font:SmallSystemFont" color="0x94a3b8FF" width="1760" horizAlign="center" />
+      <!-- Remote Control Legend Helper (Clean ASCII) -->
+      <Label id="osdHint" text="[LEFT / RIGHT] Select Option   |   [UP / DOWN] Adjust Setting   |   [OK] Select / Resume" translation="[80, 995]" font="font:SmallSystemFont" color="0x94a3b8FF" width="1760" horizAlign="center" />
     </Group>
 
     <!-- Auto-hide Timer for OSD (disappears after 6s of inactivity) -->

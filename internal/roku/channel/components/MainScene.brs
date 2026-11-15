@@ -53,19 +53,42 @@ sub init()
     m.subPanelGroup = m.top.findNode("subPanelGroup")
     m.audioRow0Bg = m.top.findNode("audioRow0Bg")
     m.audioRow0Val = m.top.findNode("audioRow0Val")
+    m.audioRow0Check = m.top.findNode("audioRow0Check")
     m.audioRow1Bg = m.top.findNode("audioRow1Bg")
     m.audioRow1Val = m.top.findNode("audioRow1Val")
+    m.audioRow1Check = m.top.findNode("audioRow1Check")
+    m.audioRow2Bg = m.top.findNode("audioRow2Bg")
+    m.audioRow2Val = m.top.findNode("audioRow2Val")
+    m.audioRow2Check = m.top.findNode("audioRow2Check")
 
-    m.subRow0Bg = m.top.findNode("subRow0Bg")
-    m.subRow0Val = m.top.findNode("subRow0Val")
-    m.subRow1Bg = m.top.findNode("subRow1Bg")
-    m.subRow1Val = m.top.findNode("subRow1Val")
-    m.subRow2Bg = m.top.findNode("subRow2Bg")
-    m.subRow2Val = m.top.findNode("subRow2Val")
-    m.subRow3Bg = m.top.findNode("subRow3Bg")
-    m.subRow3Val = m.top.findNode("subRow3Val")
-    m.subRow4Bg = m.top.findNode("subRow4Bg")
-    m.subRow4Val = m.top.findNode("subRow4Val")
+    m.subTrackPill0Bg = m.top.findNode("subTrackPill0Bg")
+    m.subTrackPill0Val = m.top.findNode("subTrackPill0Val")
+    m.subTrackPill1Bg = m.top.findNode("subTrackPill1Bg")
+    m.subTrackPill1Val = m.top.findNode("subTrackPill1Val")
+
+    m.subSizePill0Bg = m.top.findNode("subSizePill0Bg")
+    m.subSizePill0Val = m.top.findNode("subSizePill0Val")
+    m.subSizePill1Bg = m.top.findNode("subSizePill1Bg")
+    m.subSizePill1Val = m.top.findNode("subSizePill1Val")
+    m.subSizePill2Bg = m.top.findNode("subSizePill2Bg")
+    m.subSizePill2Val = m.top.findNode("subSizePill2Val")
+
+    m.subColorPill0Bg = m.top.findNode("subColorPill0Bg")
+    m.subColorPill0Val = m.top.findNode("subColorPill0Val")
+    m.subColorPill1Bg = m.top.findNode("subColorPill1Bg")
+    m.subColorPill1Val = m.top.findNode("subColorPill1Val")
+    m.subColorPill2Bg = m.top.findNode("subColorPill2Bg")
+    m.subColorPill2Val = m.top.findNode("subColorPill2Val")
+
+    m.syncMinusBg = m.top.findNode("syncMinusBg")
+    m.syncMinusVal = m.top.findNode("syncMinusVal")
+    m.syncStatusBg = m.top.findNode("syncStatusBg")
+    m.syncStatusVal = m.top.findNode("syncStatusVal")
+    m.syncPlusBg = m.top.findNode("syncPlusBg")
+    m.syncPlusVal = m.top.findNode("syncPlusVal")
+
+    m.subDoneBg = m.top.findNode("subDoneBg")
+    m.subDoneVal = m.top.findNode("subDoneVal")
 
     ' State machine constants
     m.STATE_PLAYING = 0
@@ -76,7 +99,9 @@ sub init()
 
     ' Navigation indices
     m.deckCardIndex = 0 ' 0=Play/Pause, 1=Rewind 10s, 2=Forward 10s, 3=Audio & Subs, 4=Next
-    m.subRowIndex = 0   ' 0..4
+    m.modalColumn = 1   ' 0=Audio Column, 1=Subtitles Column
+    m.audioRowIndex = 0 ' 0..2
+    m.subRowIndex = 0   ' 0=Track, 1=Size, 2=Color, 3=Sync, 4=Done
 
     ' Scrubbing and thumbnail state
     m.scrubTargetPos = 0.0
@@ -542,7 +567,9 @@ sub openSubPanel()
     m.topHeaderGroup.visible = false
     m.scrubThumbGroup.visible = false
     m.subPanelGroup.visible = true
+    m.modalColumn = 1
     m.subRowIndex = 0
+    m.audioRowIndex = 0
 
     ' Refresh audio tracks from video if available
     if m.video <> invalid and m.video.audioTracks <> invalid and m.video.audioTracks.Count() > 0
@@ -552,10 +579,14 @@ sub openSubPanel()
             desc = "Track " + (i + 1).ToStr()
             if t.DoesExist("Track") and t.Track <> ""
                 desc = t.Track
+            else if t.DoesExist("Language") and t.Language <> ""
+                desc = t.Language
             end if
             tracks.Push(desc)
         end for
         m.audioTracks = tracks
+    else if m.audioTracks = invalid or m.audioTracks.Count() = 0
+        m.audioTracks = ["English (5.1 Surround Passthrough)", "English (Stereo Downmix)"]
     end if
 
     updateSubPanelRows()
@@ -572,64 +603,147 @@ sub closeSubPanel()
 end sub
 
 sub updateSubPanelFocus()
-    subBgs = [m.subRow0Bg, m.subRow1Bg, m.subRow2Bg, m.subRow3Bg, m.subRow4Bg]
-    for i = 0 to 4
-        if i = m.subRowIndex
-            subBgs[i].color = "0xE50914FF" ' Netflix Red focus
-        else
-            subBgs[i].color = "0x15161DCC" ' Dark idle row
+    ' Left Column: Audio Tracks
+    audioBgs = [m.audioRow0Bg, m.audioRow1Bg, m.audioRow2Bg]
+    audioVals = [m.audioRow0Val, m.audioRow1Val, m.audioRow2Val]
+    for i = 0 to 2
+        if audioBgs[i] <> invalid
+            if m.modalColumn = 0 and i = m.audioRowIndex
+                audioBgs[i].color = "0xE50914FF" ' Focused in Netflix Red
+                if audioVals[i] <> invalid then audioVals[i].color = "0xFFFFFFFF"
+            else if i = m.audioTrackIndex
+                audioBgs[i].color = "0xE5091433" ' Selected active track subtle tint
+                if audioVals[i] <> invalid then audioVals[i].color = "0xFFFFFFFF"
+            else
+                audioBgs[i].color = "0x15161DCC" ' Idle
+                if audioVals[i] <> invalid then audioVals[i].color = "0x9CA3AFFF"
+            end if
         end if
     end for
+
+    ' Right Column: Subtitle Options
+    ' 1. Track Pills (Pill 0 = On, Pill 1 = Off)
+    if m.subsVisible
+        if m.modalColumn = 1 and m.subRowIndex = 0
+            m.subTrackPill0Bg.color = "0xE50914FF"
+        else
+            m.subTrackPill0Bg.color = "0xE5091444"
+        end if
+        m.subTrackPill0Val.color = "0xFFFFFFFF"
+        m.subTrackPill1Bg.color = "0x15161DCC"
+        m.subTrackPill1Val.color = "0x64748BFF"
+    else
+        m.subTrackPill0Bg.color = "0x15161DCC"
+        m.subTrackPill0Val.color = "0x64748BFF"
+        if m.modalColumn = 1 and m.subRowIndex = 0
+            m.subTrackPill1Bg.color = "0xE50914FF"
+        else
+            m.subTrackPill1Bg.color = "0xE5091444"
+        end if
+        m.subTrackPill1Val.color = "0xFFFFFFFF"
+    end if
+
+    ' 2. Text Size Pills
+    sizeBgs = [m.subSizePill0Bg, m.subSizePill1Bg, m.subSizePill2Bg]
+    sizeVals = [m.subSizePill0Val, m.subSizePill1Val, m.subSizePill2Val]
+    for s = 0 to 2
+        if s = m.subSizeIndex
+            if m.modalColumn = 1 and m.subRowIndex = 1
+                sizeBgs[s].color = "0xE50914FF"
+            else
+                sizeBgs[s].color = "0xE5091444"
+            end if
+            sizeVals[s].color = "0xFFFFFFFF"
+        else
+            sizeBgs[s].color = "0x15161DCC"
+            sizeVals[s].color = "0x9CA3AFFF"
+        end if
+    end for
+
+    ' 3. Text Color Pills
+    colorBgs = [m.subColorPill0Bg, m.subColorPill1Bg, m.subColorPill2Bg]
+    colorVals = [m.subColorPill0Val, m.subColorPill1Val, m.subColorPill2Val]
+    for c = 0 to 2
+        if c = m.subColorIndex
+            if m.modalColumn = 1 and m.subRowIndex = 2
+                colorBgs[c].color = "0xE50914FF"
+                colorVals[c].color = "0xFFFFFFFF"
+            else
+                colorBgs[c].color = "0xE5091444"
+            end if
+        else
+            colorBgs[c].color = "0x15161DCC"
+            if c = 1
+                colorVals[c].color = "0xFACC15FF"
+            else if c = 2
+                colorVals[c].color = "0x38BDF8FF"
+            else
+                colorVals[c].color = "0x9CA3AFFF"
+            end if
+        end if
+    end for
+
+    ' 4. Audio & Sub Sync
+    if m.modalColumn = 1 and m.subRowIndex = 3
+        m.syncStatusBg.color = "0xE5091433"
+        m.syncMinusBg.color = "0x2A3142CC"
+        m.syncPlusBg.color = "0x2A3142CC"
+    else
+        m.syncStatusBg.color = "0x064E3B66"
+        m.syncMinusBg.color = "0x15161DCC"
+        m.syncPlusBg.color = "0x15161DCC"
+    end if
+
+    ' 5. Done Button
+    if m.modalColumn = 1 and m.subRowIndex = 4
+        m.subDoneBg.color = "0xE50914FF"
+        m.subDoneVal.color = "0xFFFFFFFF"
+    else
+        m.subDoneBg.color = "0x15161DCC"
+        m.subDoneVal.color = "0xCCCCCCFF"
+    end if
 end sub
 
 sub updateSubPanelRows()
-    if m.subTracks.Count() > 0 and m.subTrackIndex < m.subTracks.Count()
-        m.subRow0Val.text = "< " + m.subTracks[m.subTrackIndex] + " >"
-    else
-        m.subRow0Val.text = "< OFF >"
-    end if
-
-    m.subRow1Val.text = "< " + m.sizeNames[m.subSizeIndex] + " >"
-    m.subRow2Val.text = "< " + m.colorNames[m.subColorIndex] + " >"
-    m.subRow3Val.text = "< " + formatOffset(m.subOffset) + " >"
-
-    if m.audioTracks.Count() > 0 and m.audioTrackIndex < m.audioTracks.Count()
-        m.audioRow0Val.text = m.audioTracks[m.audioTrackIndex] + " *"
-    else
-        m.audioRow0Val.text = "Track 1: Default *"
-    end if
-end sub
-
-sub adjustSetting(rowIndex as Integer, delta as Integer)
-    if rowIndex = 0
-        if m.subTracks.Count() > 1
-            m.subTrackIndex = (m.subTrackIndex + delta + m.subTracks.Count()) Mod m.subTracks.Count()
-            trackName = m.subTracks[m.subTrackIndex]
-            if trackName = "OFF"
-                m.subsVisible = false
-                m.subtitleGroup.visible = false
+    ' Update Audio Track labels and checkmarks
+    audioVals = [m.audioRow0Val, m.audioRow1Val, m.audioRow2Val]
+    audioBgs = [m.audioRow0Bg, m.audioRow1Bg, m.audioRow2Bg]
+    audioChecks = [m.audioRow0Check, m.audioRow1Check, m.audioRow2Check]
+    
+    trackCount = m.audioTracks.Count()
+    if trackCount > 3 then trackCount = 3
+    for i = 0 to 2
+        if i < trackCount
+            audioBgs[i].visible = true
+            audioVals[i].visible = true
+            audioChecks[i].visible = true
+            audioVals[i].text = m.audioTracks[i]
+            if i = m.audioTrackIndex
+                audioChecks[i].text = "*"
             else
-                m.subsVisible = true
-                showSubPreview()
+                audioChecks[i].text = ""
             end if
-        end if
-    else if rowIndex = 1
-        count = m.sizeNames.Count()
-        m.subSizeIndex = (m.subSizeIndex + delta + count) Mod count
-        applySubtitleStyle()
-    else if rowIndex = 2
-        count = m.colors.Count()
-        m.subColorIndex = (m.subColorIndex + delta + count) Mod count
-        applySubtitleStyle()
-    else if rowIndex = 3
-        if delta > 0
-            m.subOffset = m.subOffset + 0.5
         else
-            m.subOffset = m.subOffset - 0.5
+            audioBgs[i].visible = false
+            audioVals[i].visible = false
+            audioChecks[i].visible = false
         end if
+    end for
+
+    ' Update Subtitle Track name
+    if m.subTracks.Count() > 0 and m.subTrackIndex < m.subTracks.Count()
+        trackName = m.subTracks[m.subTrackIndex]
+        if trackName <> "OFF"
+            m.subTrackPill0Val.text = trackName
+        else
+            m.subTrackPill0Val.text = "English [CC]"
+        end if
+    else
+        m.subTrackPill0Val.text = "English [CC]"
     end if
 
-    updateSubPanelRows()
+    ' Update Sync Offset label
+    m.syncStatusVal.text = formatOffset(m.subOffset)
 end sub
 
 sub applySubtitleStyle()
@@ -816,40 +930,125 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
                 return true
             end if
 
-        ' STATE 2: SUBTITLE & AUDIO CENTER MODAL
+        ' STATE 2: SUBTITLE & AUDIO CENTER MODAL (Dual Column)
         else if m.currentState = m.STATE_MODAL
-            if lKey = "up"
-                m.subRowIndex = (m.subRowIndex - 1 + 5) Mod 5
-                updateSubPanelFocus()
-                return true
-            else if lKey = "down"
-                m.subRowIndex = (m.subRowIndex + 1) Mod 5
-                updateSubPanelFocus()
-                return true
-            else if lKey = "left"
-                adjustSetting(m.subRowIndex, -1)
-                return true
-            else if lKey = "right"
-                adjustSetting(m.subRowIndex, 1)
-                return true
-            else if lKey = "ok" or lKey = "select"
-                if m.subRowIndex = 3
-                    m.subOffset = 0.0
-                    updateSubPanelRows()
-                    if m.isShowingSample
-                        sampleText = "[ Subtitle Preview - Audio Sync 0.0s ]"
-                        m.subtitleLabel.text = sampleText
-                        m.subtitleShadow.text = sampleText
+            if m.modalColumn = 0
+                ' LEFT COLUMN: AUDIO STREAMS
+                if lKey = "up"
+                    m.audioRowIndex = (m.audioRowIndex - 1 + 3) Mod 3
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "down"
+                    m.audioRowIndex = (m.audioRowIndex + 1) Mod 3
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "right"
+                    m.modalColumn = 1
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "ok" or lKey = "select"
+                    m.audioTrackIndex = m.audioRowIndex
+                    if m.video <> invalid and m.video.audioTracks <> invalid and m.audioTrackIndex < m.video.audioTracks.Count()
+                        m.video.audioTrack = m.video.audioTracks[m.audioTrackIndex].Track
                     end if
-                else if m.subRowIndex = 4
+                    updateSubPanelRows()
+                    updateSubPanelFocus()
+                    trackName = "Track " + (m.audioTrackIndex + 1).ToStr()
+                    if m.audioTrackIndex < m.audioTracks.Count() then trackName = m.audioTracks[m.audioTrackIndex]
+                    showToast("Switched to " + trackName)
+                    return true
+                else if lKey = "back"
                     closeSubPanel()
-                else
-                    adjustSetting(m.subRowIndex, 1)
+                    return true
                 end if
-                return true
-            else if lKey = "back"
-                closeSubPanel()
-                return true
+            else
+                ' RIGHT COLUMN: SUBTITLE OPTIONS
+                if lKey = "up"
+                    m.subRowIndex = (m.subRowIndex - 1 + 5) Mod 5
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "down"
+                    m.subRowIndex = (m.subRowIndex + 1) Mod 5
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "left"
+                    if m.subRowIndex = 0
+                        ' Toggle to Track On
+                        m.subsVisible = true
+                        m.subtitleGroup.visible = true
+                        showSubPreview()
+                    else if m.subRowIndex = 1
+                        ' Text Size decrement
+                        m.subSizeIndex = (m.subSizeIndex - 1 + 3) Mod 3
+                        applySubtitleStyle()
+                        showSubPreview()
+                    else if m.subRowIndex = 2
+                        ' Text Color decrement
+                        m.subColorIndex = (m.subColorIndex - 1 + 3) Mod 3
+                        applySubtitleStyle()
+                        showSubPreview()
+                    else if m.subRowIndex = 3
+                        ' Sync nudge -0.5s
+                        m.subOffset = m.subOffset - 0.5
+                        showSubPreview()
+                    else if m.subRowIndex = 4
+                        ' Jump to Audio Column
+                        m.modalColumn = 0
+                    end if
+                    updateSubPanelRows()
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "right"
+                    if m.subRowIndex = 0
+                        ' Toggle to Off
+                        m.subsVisible = false
+                        m.subtitleGroup.visible = false
+                    else if m.subRowIndex = 1
+                        ' Text Size increment
+                        m.subSizeIndex = (m.subSizeIndex + 1) Mod 3
+                        applySubtitleStyle()
+                        showSubPreview()
+                    else if m.subRowIndex = 2
+                        ' Text Color increment
+                        m.subColorIndex = (m.subColorIndex + 1) Mod 3
+                        applySubtitleStyle()
+                        showSubPreview()
+                    else if m.subRowIndex = 3
+                        ' Sync nudge +0.5s
+                        m.subOffset = m.subOffset + 0.5
+                        showSubPreview()
+                    end if
+                    updateSubPanelRows()
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "ok" or lKey = "select"
+                    if m.subRowIndex = 0
+                        ' Toggle On / Off
+                        m.subsVisible = not m.subsVisible
+                        m.subtitleGroup.visible = m.subsVisible
+                        if m.subsVisible then showSubPreview()
+                    else if m.subRowIndex = 1
+                        m.subSizeIndex = (m.subSizeIndex + 1) Mod 3
+                        applySubtitleStyle()
+                        showSubPreview()
+                    else if m.subRowIndex = 2
+                        m.subColorIndex = (m.subColorIndex + 1) Mod 3
+                        applySubtitleStyle()
+                        showSubPreview()
+                    else if m.subRowIndex = 3
+                        ' Reset sync
+                        m.subOffset = 0.0
+                        showSubPreview()
+                    else if m.subRowIndex = 4
+                        closeSubPanel()
+                    end if
+                    updateSubPanelRows()
+                    updateSubPanelFocus()
+                    return true
+                else if lKey = "back"
+                    closeSubPanel()
+                    return true
+                end if
             end if
         end if
 

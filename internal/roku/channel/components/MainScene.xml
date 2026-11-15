@@ -129,53 +129,92 @@
     <!-- ============================================================ -->
     <Group id="subPanelGroup" visible="false">
       <!-- Fullscreen Dimmer -->
-      <Rectangle width="1920" height="1080" color="0x000000B8" />
+      <Rectangle width="1920" height="1080" color="0x000000C8" />
 
-      <!-- Centered Modal Card -->
-      <Rectangle width="1160" height="660" translation="[380, 210]" color="0x08090CFE" />
-      <Rectangle width="1160" height="3" translation="[380, 210]" color="0xE50914FF" />
+      <!-- Centered Modal Card (1160 x 730) -->
+      <Rectangle width="1160" height="730" translation="[380, 175]" color="0x0A0D14FD" />
+      <Rectangle width="1160" height="3" translation="[380, 175]" color="0xE50914FF" />
 
-      <!-- Modal Title -->
-      <Label text="AUDIO &amp; SUBTITLES" translation="[420, 235]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="600" />
-      <Rectangle width="1080" height="1" translation="[420, 280]" color="0x262626FF" />
+      <!-- Modal Header -->
+      <Poster uri="pkg:/images/audio_sub.png" width="70" height="20" translation="[420, 207]" loadDisplayMode="scaleToFit" />
+      <Label text="AUDIO &amp; SUBTITLES" translation="[505, 203]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="500" />
+      <Label text="[Back] to Close" translation="[1360, 205]" font="font:SmallBoldSystemFont" color="0x888888FF" horizAlign="right" width="140" />
+
+      <!-- Top Divider -->
+      <Rectangle width="1080" height="1" translation="[420, 245]" color="0x262626FF" />
 
       <!-- Vertical Column Divider -->
-      <Rectangle width="1" height="540" translation="[930, 280]" color="0x262626FF" />
+      <Rectangle width="1" height="635" translation="[920, 245]" color="0x262626FF" />
 
-      <!-- LEFT COLUMN: AUDIO STREAMS -->
-      <Label text="AUDIO" translation="[420, 305]" font="font:SmallBoldSystemFont" color="0x888888FF" width="480" />
-      <Rectangle id="audioRow0Bg" width="480" height="60" translation="[420, 340]" color="0xE5091424" />
-      <Label id="audioRow0Val" text="Track 1: Default *" translation="[440, 357]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" width="440" />
+      <!-- ========================================================== -->
+      <!-- LEFT COLUMN: AUDIO STREAMS                                 -->
+      <!-- ========================================================== -->
+      <Label text="AUDIO STREAMS" translation="[420, 270]" font="font:SmallBoldSystemFont" color="0x9CA3AFFF" width="460" />
 
-      <Rectangle id="audioRow1Bg" width="480" height="60" translation="[420, 415]" color="0x15161DCC" />
-      <Label id="audioRow1Val" text="Track 2: Alternate" translation="[440, 432]" font="font:MediumBoldSystemFont" color="0x888888FF" width="440" />
+      <!-- Audio Track 0 -->
+      <Rectangle id="audioRow0Bg" width="460" height="56" translation="[420, 305]" color="0x15161DCC" />
+      <Label id="audioRow0Val" text="English (5.1 Surround Passthrough)" translation="[438, 322]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" width="390" />
+      <Label id="audioRow0Check" text="*" translation="[840, 318]" font="font:LargeBoldSystemFont" color="0xE50914FF" width="30" horizAlign="right" />
 
-      <!-- RIGHT COLUMN: SUBTITLE SETTINGS -->
-      <Label text="SUBTITLES" translation="[960, 305]" font="font:SmallBoldSystemFont" color="0x888888FF" width="540" />
+      <!-- Audio Track 1 -->
+      <Rectangle id="audioRow1Bg" width="460" height="56" translation="[420, 375]" color="0x15161DCC" />
+      <Label id="audioRow1Val" text="English (Stereo Downmix)" translation="[438, 392]" font="font:MediumBoldSystemFont" color="0x9CA3AFFF" width="390" />
+      <Label id="audioRow1Check" text="" translation="[840, 388]" font="font:LargeBoldSystemFont" color="0xE50914FF" width="30" horizAlign="right" />
 
-      <!-- Sub Row 0: Language Track -->
-      <Rectangle id="subRow0Bg" width="540" height="65" translation="[960, 340]" color="0xE50914FF" />
-      <Label text="Language" translation="[980, 347]" font="font:SmallBoldSystemFont" color="0xDDDDDDFF" width="500" />
-      <Label id="subRow0Val" text="&lt; English [CC] &gt;" translation="[980, 372]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" width="500" />
+      <!-- Audio Track 2 -->
+      <Rectangle id="audioRow2Bg" width="460" height="56" translation="[420, 445]" color="0x15161DCC" />
+      <Label id="audioRow2Val" text="Alternate Audio" translation="[438, 462]" font="font:MediumBoldSystemFont" color="0x9CA3AFFF" width="390" />
+      <Label id="audioRow2Check" text="" translation="[840, 458]" font="font:LargeBoldSystemFont" color="0xE50914FF" width="30" horizAlign="right" />
 
-      <!-- Sub Row 1: Font Size -->
-      <Rectangle id="subRow1Bg" width="540" height="65" translation="[960, 420]" color="0x15161DCC" />
-      <Label text="Font Size" translation="[980, 427]" font="font:SmallBoldSystemFont" color="0x888888FF" width="500" />
-      <Label id="subRow1Val" text="&lt; Large (42pt) &gt;" translation="[980, 452]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" width="500" />
+      <!-- ========================================================== -->
+      <!-- RIGHT COLUMN: SUBTITLE OPTIONS                             -->
+      <!-- ========================================================== -->
+      <Label text="SUBTITLE OPTIONS" translation="[950, 270]" font="font:SmallBoldSystemFont" color="0x9CA3AFFF" width="550" />
 
-      <!-- Sub Row 2: Font Color -->
-      <Rectangle id="subRow2Bg" width="540" height="65" translation="[960, 500]" color="0x15161DCC" />
-      <Label text="Font Color" translation="[980, 507]" font="font:SmallBoldSystemFont" color="0x888888FF" width="500" />
-      <Label id="subRow2Val" text="&lt; White &gt;" translation="[980, 532]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" width="500" />
+      <!-- Section 1: Track -->
+      <Label text="TRACK" translation="[950, 302]" font="font:SmallBoldSystemFont" color="0x64748BFF" width="550" />
+      <Rectangle id="subTrackPill0Bg" width="265" height="44" translation="[950, 326]" color="0x15161DCC" />
+      <Label id="subTrackPill0Val" text="English [CC]" width="265" height="44" translation="[950, 326]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
 
-      <!-- Sub Row 3: Timing Sync -->
-      <Rectangle id="subRow3Bg" width="540" height="65" translation="[960, 580]" color="0x15161DCC" />
-      <Label text="Sync Timing (Left/Right nudges, OK resets)" translation="[980, 587]" font="font:SmallBoldSystemFont" color="0x888888FF" width="500" />
-      <Label id="subRow3Val" text="&lt; 0.0s (In Sync) &gt;" translation="[980, 612]" font="font:MediumBoldSystemFont" color="0x34D399FF" width="500" />
+      <Rectangle id="subTrackPill1Bg" width="265" height="44" translation="[1235, 326]" color="0x15161DCC" />
+      <Label id="subTrackPill1Val" text="Off" width="265" height="44" translation="[1235, 326]" font="font:MediumBoldSystemFont" color="0x9CA3AFFF" horizAlign="center" vertAlign="center" />
 
-      <!-- Sub Row 4: Done / Close Button -->
-      <Rectangle id="subRow4Bg" width="540" height="52" translation="[960, 660]" color="0x15161DCC" />
-      <Label id="subRow4Val" text="Done &amp; Resume Playback" translation="[960, 660]" width="540" height="52" horizAlign="center" vertAlign="center" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
+      <!-- Section 2: Text Size -->
+      <Label text="TEXT SIZE" translation="[950, 384]" font="font:SmallBoldSystemFont" color="0x64748BFF" width="550" />
+      <Rectangle id="subSizePill0Bg" width="172" height="42" translation="[950, 408]" color="0x15161DCC" />
+      <Label id="subSizePill0Val" text="Normal" width="172" height="42" translation="[950, 408]" font="font:SmallBoldSystemFont" color="0x9CA3AFFF" horizAlign="center" vertAlign="center" />
+
+      <Rectangle id="subSizePill1Bg" width="172" height="42" translation="[1138, 408]" color="0xE50914FF" />
+      <Label id="subSizePill1Val" text="Large" width="172" height="42" translation="[1138, 408]" font="font:SmallBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
+
+      <Rectangle id="subSizePill2Bg" width="172" height="42" translation="[1326, 408]" color="0x15161DCC" />
+      <Label id="subSizePill2Val" text="Huge" width="172" height="42" translation="[1326, 408]" font="font:SmallBoldSystemFont" color="0x9CA3AFFF" horizAlign="center" vertAlign="center" />
+
+      <!-- Section 3: Text Color -->
+      <Label text="TEXT COLOR" translation="[950, 464]" font="font:SmallBoldSystemFont" color="0x64748BFF" width="550" />
+      <Rectangle id="subColorPill0Bg" width="172" height="42" translation="[950, 488]" color="0xE50914FF" />
+      <Label id="subColorPill0Val" text="White" width="172" height="42" translation="[950, 488]" font="font:SmallBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
+
+      <Rectangle id="subColorPill1Bg" width="172" height="42" translation="[1138, 488]" color="0x15161DCC" />
+      <Label id="subColorPill1Val" text="Yellow" width="172" height="42" translation="[1138, 488]" font="font:SmallBoldSystemFont" color="0xFACC15FF" horizAlign="center" vertAlign="center" />
+
+      <Rectangle id="subColorPill2Bg" width="172" height="42" translation="[1326, 488]" color="0x15161DCC" />
+      <Label id="subColorPill2Val" text="Sky Blue" width="172" height="42" translation="[1326, 488]" font="font:SmallBoldSystemFont" color="0x38BDF8FF" horizAlign="center" vertAlign="center" />
+
+      <!-- Section 4: Audio & Sub Sync -->
+      <Label text="AUDIO &amp; SUB SYNC" translation="[950, 544]" font="font:SmallBoldSystemFont" color="0x64748BFF" width="550" />
+      <Rectangle id="syncMinusBg" width="110" height="42" translation="[950, 568]" color="0x15161DCC" />
+      <Label id="syncMinusVal" text="- 0.5s" width="110" height="42" translation="[950, 568]" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+
+      <Rectangle id="syncStatusBg" width="315" height="42" translation="[1075, 568]" color="0x064E3B66" />
+      <Label id="syncStatusVal" text="0.0s (In Sync)" width="315" height="42" translation="[1075, 568]" font="font:SmallBoldSystemFont" color="0x34D399FF" horizAlign="center" vertAlign="center" />
+
+      <Rectangle id="syncPlusBg" width="95" height="42" translation="[1405, 568]" color="0x15161DCC" />
+      <Label id="syncPlusVal" text="+ 0.5s" width="95" height="42" translation="[1405, 568]" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+
+      <!-- Section 5: Done / Resume Button -->
+      <Rectangle id="subDoneBg" width="550" height="48" translation="[950, 630]" color="0x15161DCC" />
+      <Label id="subDoneVal" text="Done &amp; Resume Playback" width="550" height="48" translation="[950, 630]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
     </Group>
   </children>
   <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />

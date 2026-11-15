@@ -1,6 +1,6 @@
-# 📺 Roku Video Caster (V2.1 PRO)
+# 📺 Roku Video Caster (V2.2 PRO)
 
-[![Release](https://img.shields.io/badge/Release-v2.1.2-brightgreen.svg)](https://github.com/TenacityMind/RokuVideoCaster/releases)
+[![Release](https://img.shields.io/badge/Release-v2.2.0-brightgreen.svg)](https://github.com/TenacityMind/RokuVideoCaster/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go)](https://golang.org)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Android-lightgrey.svg)]()
@@ -47,7 +47,7 @@ Cast personal local movies and online videos directly to your Roku TV with zero 
   - Robust false-positive filtering prevents web manifest stalls and suppresses raw CMAF segment clutter.
 - **🎮 Netflix-Style Cinematic TV Player UI & Remote Controls:**
   - **🎞️ Scene Slider Preview (Trick Play Thumbnails):** Pressing or holding `Left` or `Right` glides a floating 16:9 thumbnail preview card along the red timeline showing the scene and timestamp. Playback is not interrupted until you press `OK` to commit the seek!
-  - **Instant 140ms Hardware Extraction & In-Memory Caching:** Dynamic thumbnail generation powered by `ffmpeg` on your host machine, serving cached frames in `10ms`.
+  - **Instant 140ms Hardware Extraction & In-Memory Caching:** Dynamic thumbnail generation powered by `ffmpeg` on your host machine, serving cached frames in `10ms` for both local files and online streams (Flixer, HLS, MP4).
   - **Uniform Netflix Action Deck:** Clean, symbol-free action buttons: `[Play / Pause]`, `[-10]`, `[+10]`, `[Audio & Subtitles Icon]`, and `[Next]`.
   - **Netflix Remote Control Key Behavior:**
     - `OK` while playing: Pauses video and displays options deck.

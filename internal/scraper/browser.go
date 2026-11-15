@@ -290,7 +290,8 @@ func isMediaURL(raw string) bool {
 		strings.HasSuffix(l, ".woff") ||
 		strings.HasSuffix(l, ".woff2") ||
 		strings.HasSuffix(l, ".js") ||
-		strings.HasSuffix(l, ".css") {
+		strings.HasSuffix(l, ".css") ||
+		strings.HasSuffix(l, ".m4s") { // CMAF fMP4 segment — not a standalone stream
 		return false
 	}
 	return strings.Contains(l, ".m3u8") ||

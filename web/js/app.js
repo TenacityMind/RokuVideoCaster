@@ -469,6 +469,14 @@ async function castCurrentWeb() {
 
   const title = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
 
+  // Find captured browser headers for the selected stream so the HLS proxy
+  // can forward them to the CDN (Referer, User-Agent, etc.)
+  let streamHeaders = {};
+  if (currentWebAnalysis && currentWebAnalysis.candidates) {
+    const match = currentWebAnalysis.candidates.find(c => (c.url || c.URL) === streamURL);
+    if (match && match.headers) streamHeaders = match.headers;
+  }
+
   try {
     const res = await fetch("/api/cast/web", {
       method: "POST",
@@ -478,6 +486,7 @@ async function castCurrentWeb() {
         title: title,
         subtitle_url: subURL,
         subtitle_token: subToken,
+        headers: streamHeaders,
       }),
     });
     const data = await res.json();
@@ -498,7 +507,14 @@ async function addCurrentWebToQueue() {
   if (selectedRadio) streamURL = selectedRadio.value;
   if (!streamURL) return alert("Please enter a stream link first");
 
-  const title = currentWebAnalysis ? currentWebAnalysis.Title : "Online Stream";
+  const title = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
+
+  let streamHeaders = {};
+  if (currentWebAnalysis && currentWebAnalysis.candidates) {
+    const match = currentWebAnalysis.candidates.find(c => (c.url || c.URL) === streamURL);
+    if (match && match.headers) streamHeaders = match.headers;
+  }
+
   await fetch("/api/playlist/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -506,6 +522,7 @@ async function addCurrentWebToQueue() {
       title: title,
       media_url: streamURL,
       format: "web",
+      headers: streamHeaders,
     }),
   });
   loadPlaylist();

@@ -12,6 +12,7 @@ import (
 	"github.com/TenacityMind/RokuVideoCaster/internal/config"
 	"github.com/TenacityMind/RokuVideoCaster/internal/media"
 	"github.com/TenacityMind/RokuVideoCaster/internal/playlist"
+	"github.com/TenacityMind/RokuVideoCaster/internal/proxy"
 	"github.com/TenacityMind/RokuVideoCaster/internal/roku"
 	"github.com/TenacityMind/RokuVideoCaster/internal/scraper"
 	"github.com/TenacityMind/RokuVideoCaster/internal/subtitle"
@@ -72,6 +73,9 @@ func (s *Server) routes() {
 	// Media and Subtitle direct streaming routes
 	s.mux.HandleFunc("/media/", s.mediaServer.ServeHTTPMedia)
 	s.mux.HandleFunc("/subtitles/", s.mediaServer.ServeHTTPSubtitle)
+
+	// HLS proxy route — rewrites upstream playlist URLs so Roku fetches through us
+	s.mux.HandleFunc("/proxy/hls", s.handleProxyHLS)
 
 	// Embedded Web UI
 	if s.webFS != nil {
@@ -343,12 +347,13 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		StreamURL     string  `json:"stream_url"`
-		MediaURL      string  `json:"media_url"`
-		Title         string  `json:"title"`
-		SubtitleURL   string  `json:"subtitle_url"`
-		SubtitleToken string  `json:"subtitle_token"`
-		SubOffset     float64 `json:"sub_offset"`
+		StreamURL     string            `json:"stream_url"`
+		MediaURL      string            `json:"media_url"`
+		Title         string            `json:"title"`
+		SubtitleURL   string            `json:"subtitle_url"`
+		SubtitleToken string            `json:"subtitle_token"`
+		SubOffset     float64           `json:"sub_offset"`
+		Headers       map[string]string `json:"headers"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid json: "+err.Error())
@@ -378,8 +383,17 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 	callbackURL := fmt.Sprintf("http://%s:%d/api/roku/event", localIP, port)
 	webURL := fmt.Sprintf("http://%s:%d", localIP, port)
 
+	// For HLS/DASH streams, route through the local HLS proxy so Roku fetches
+	// from us — we add the correct Referer/User-Agent headers the CDN needs,
+	// and we rewrite relative segment URLs to absolute proxied URLs.
+	castURL := req.StreamURL
+	if proxy.NeedsProxy(castURL) {
+		localBase := proxy.ProxyBaseURL(localIP, port)
+		castURL = proxy.MakeProxyURL(localBase, castURL, req.Headers)
+	}
+
 	err := s.rokuClient.Launch(r.Context(), targetIP, roku.LaunchParams{
-		MediaURL:    req.StreamURL,
+		MediaURL:    castURL,
 		SubURL:      subURL,
 		Title:       title,
 		SubOffset:   req.SubOffset,
@@ -393,11 +407,23 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"status":    "casting",
-		"media_url": req.StreamURL,
+		"media_url": castURL,
 		"sub_url":   subURL,
 		"title":     title,
 	})
 }
+
+// handleProxyHLS proxies HLS playlist and segment requests upstream with the
+// original browser-captured headers, then rewrites playlist URLs to route back
+// through us. This lets Roku play streams that need Referer/User-Agent headers
+// or have relative URL structures the TV player can't resolve on its own.
+func (s *Server) handleProxyHLS(w http.ResponseWriter, r *http.Request) {
+	targetIP, _, port, _ := s.cfg.Get()
+	localIP := media.GetOutboundIP(targetIP)
+	localBase := proxy.ProxyBaseURL(localIP, port)
+	proxy.ServeHLS(w, r, localBase)
+}
+
 
 func (s *Server) handleCastControl(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -459,18 +485,27 @@ func (s *Server) handlePlaylistAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title    string  `json:"title"`
-		MediaURL string  `json:"media_url"`
-		SubURL   string  `json:"sub_url"`
-		Format   string  `json:"format"`
-		Duration float64 `json:"duration"`
+		Title    string            `json:"title"`
+		MediaURL string            `json:"media_url"`
+		SubURL   string            `json:"sub_url"`
+		Format   string            `json:"format"`
+		Duration float64           `json:"duration"`
+		Headers  map[string]string `json:"headers"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid json: "+err.Error())
 		return
 	}
 
-	item := s.playlistMgr.Add(req.Title, req.MediaURL, req.SubURL, req.Format, req.Duration)
+	mediaURL := req.MediaURL
+	if proxy.NeedsProxy(mediaURL) && !strings.Contains(mediaURL, "/proxy/hls") {
+		targetIP, _, port, _ := s.cfg.Get()
+		localIP := media.GetOutboundIP(targetIP)
+		localBase := proxy.ProxyBaseURL(localIP, port)
+		mediaURL = proxy.MakeProxyURL(localBase, mediaURL, req.Headers)
+	}
+
+	item := s.playlistMgr.Add(req.Title, mediaURL, req.SubURL, req.Format, req.Duration)
 	writeJSON(w, http.StatusOK, item)
 }
 
@@ -495,13 +530,21 @@ func (s *Server) handleRokuEvent(w http.ResponseWriter, r *http.Request) {
 	if (event == "finished" && s.playlistMgr.IsAutoAdvance()) || event == "next" {
 		nextItem := s.playlistMgr.Next()
 		if nextItem != nil {
-			targetIP, _, _, _ := s.cfg.Get()
+			targetIP, _, port, _ := s.cfg.Get()
 			if targetIP != "" {
+				localIP := media.GetOutboundIP(targetIP)
+				mediaURL := nextItem.MediaURL
+				if proxy.NeedsProxy(mediaURL) && !strings.Contains(mediaURL, "/proxy/hls") {
+					localBase := proxy.ProxyBaseURL(localIP, port)
+					mediaURL = proxy.MakeProxyURL(localBase, mediaURL, nil)
+				}
+				webURL := fmt.Sprintf("http://%s:%d", localIP, port)
 				_ = s.rokuClient.Launch(r.Context(), targetIP, roku.LaunchParams{
-					MediaURL:    nextItem.MediaURL,
+					MediaURL:    mediaURL,
 					SubURL:      nextItem.SubURL,
 					Title:       nextItem.Title,
 					CallbackURL: r.URL.String(),
+					WebURL:      webURL,
 				})
 			}
 		}

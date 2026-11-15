@@ -54,6 +54,7 @@ type LaunchParams struct {
 	AudioTrack  int     `json:"audio_track"`
 	CallbackURL string  `json:"callback_url"`
 	WebURL      string  `json:"web_url"`
+	ThumbURL    string  `json:"thumb_url"`
 }
 
 type Client struct {
@@ -186,6 +187,9 @@ func (c *Client) Launch(ctx context.Context, host string, params LaunchParams) e
 	}
 	if params.WebURL != "" {
 		q.Set("web_url", params.WebURL)
+	}
+	if params.ThumbURL != "" {
+		q.Set("thumb_url", params.ThumbURL)
 	}
 
 	// 1. Launch dev channel (brings app forward & passes deep link args)

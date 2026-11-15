@@ -149,9 +149,11 @@ sub onArgs()
     end if
     m.deckTitle.text = UCase(m.currentTitle.ToStr())
 
-    ' Derive thumbnail base URL for local file streams: /media/<token>/thumb
+    ' Derive thumbnail base URL (check explicit thumb_url param or fall back to /media/ path)
     m.thumbBaseUrl = ""
-    if InStr(1, mediaUrl, "/media/") > 0
+    if args.DoesExist("thumb_url") and args.thumb_url <> ""
+        m.thumbBaseUrl = args.thumb_url
+    else if InStr(1, mediaUrl, "/media/") > 0
         parts = mediaUrl.Split("/")
         if parts.Count() >= 5
             m.thumbBaseUrl = parts[0] + "//" + parts[2] + "/media/" + parts[4] + "/thumb"
@@ -482,17 +484,19 @@ sub clampAndRenderScrub()
     if remSec < 0 then remSec = 0
     m.deckTimeRemaining.text = "-" + formatTime(remSec)
 
-    ' Position floating scene thumbnail preview card (280px wide)
+    ' Position floating scene thumbnail preview card (280px wide, raised to 595px to float cleanly above timeline)
     thumbX = 80 + fillWidth - 140
     if thumbX < 40 then thumbX = 40
     if thumbX > 1600 then thumbX = 1600
-    m.scrubThumbGroup.translation = [thumbX, 645]
+    m.scrubThumbGroup.translation = [thumbX, 595]
 
     m.scrubThumbTime.text = formatTime(m.scrubTargetPos)
 
     ' Update thumbnail poster if available
     if m.thumbBaseUrl <> ""
         m.scrubThumbPoster.uri = m.thumbBaseUrl + "?t=" + Int(m.scrubTargetPos).ToStr()
+    else
+        m.scrubThumbPoster.uri = ""
     end if
 end sub
 

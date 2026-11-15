@@ -320,6 +320,7 @@ func (s *Server) handleCastLocal(w http.ResponseWriter, r *http.Request) {
 
 	callbackURL := fmt.Sprintf("http://%s:%d/api/roku/event", localIP, port)
 	webURL := fmt.Sprintf("http://%s:%d", localIP, port)
+	thumbURL := fmt.Sprintf("http://%s:%d/media/%s/thumb", localIP, port, fileToken)
 
 	err := s.rokuClient.Launch(r.Context(), targetIP, roku.LaunchParams{
 		MediaURL:    mediaURL,
@@ -329,6 +330,7 @@ func (s *Server) handleCastLocal(w http.ResponseWriter, r *http.Request) {
 		AudioTrack:  req.AudioTrack,
 		CallbackURL: callbackURL,
 		WebURL:      webURL,
+		ThumbURL:    thumbURL,
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())

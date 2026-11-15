@@ -15,14 +15,14 @@ package-channel:
 build-mac: package-channel
 	@echo "Building macOS standalone binary..."
 	@mkdir -p bin
-	go build -ldflags "-s -w -X main.version=$(VERSION)" -o bin/$(BINARY_NAME) ./cmd/roku-caster
+	GOPROXY=https://proxy.golang.org,direct GOSUMDB=sum.golang.org GOTOOLCHAIN=auto go build -ldflags "-s -w -X main.version=$(VERSION)" -o bin/$(BINARY_NAME) ./cmd/roku-caster
 	@echo "Done: bin/$(BINARY_NAME)"
 
 # Build Windows 64-bit executable (.exe)
 build-win: package-channel
 	@echo "Building Windows standalone executable..."
 	@mkdir -p bin
-	GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X main.version=$(VERSION)" -o bin/$(BINARY_NAME)-win.exe ./cmd/roku-caster
+	GOPROXY=https://proxy.golang.org,direct GOSUMDB=sum.golang.org GOTOOLCHAIN=auto GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X main.version=$(VERSION)" -o bin/$(BINARY_NAME)-win.exe ./cmd/roku-caster
 	@echo "Done: bin/$(BINARY_NAME)-win.exe"
 
 # Cross-compile for all platforms

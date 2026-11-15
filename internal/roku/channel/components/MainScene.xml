@@ -57,12 +57,13 @@
     <!-- TOP HEADER OVERLAY (Netflix Title & Format Tags)             -->
     <!-- ============================================================ -->
     <Group id="topHeaderGroup" visible="false">
-      <Rectangle width="1920" height="160" translation="[0, 0]" color="0x000000CC" />
-      <Label id="deckTitle" text="NOW PLAYING" translation="[80, 50]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="1100" />
-      <Rectangle width="80" height="26" translation="[1200, 58]" color="0x262626EE" />
-      <Label text="4K UHD" width="80" height="26" translation="[1200, 58]" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" />
-      <Rectangle width="55" height="26" translation="[1290, 58]" color="0x262626EE" />
-      <Label text="5.1" width="55" height="26" translation="[1290, 58]" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" />
+      <Rectangle width="1920" height="150" translation="[0, 0]" color="0x000000D0" />
+      <Label id="deckTitle" text="NOW PLAYING" translation="[80, 52]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="1500" />
+      <!-- Resolution & Audio Tags on Top Right (Widened to prevent truncation) -->
+      <Rectangle width="115" height="30" translation="[1620, 54]" color="0x262626EE" />
+      <Label text="4K UHD" width="115" height="30" translation="[1620, 54]" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xDDDDDDFF" />
+      <Rectangle width="65" height="30" translation="[1750, 54]" color="0x262626EE" />
+      <Label text="5.1" width="65" height="30" translation="[1750, 54]" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xDDDDDDFF" />
     </Group>
 
     <!-- ============================================================ -->
@@ -70,11 +71,11 @@
     <!-- ============================================================ -->
     <Group id="deckGroup" visible="false">
       <!-- Dark bottom scrim -->
-      <Rectangle width="1920" height="340" translation="[0, 740]" color="0x000000F2" />
+      <Rectangle width="1920" height="360" translation="[0, 720]" color="0x000000F5" />
 
       <!-- Elapsed & Remaining Time Display -->
-      <Label id="deckTimeElapsed" text="00:00:00" translation="[80, 810]" font="font:SmallBoldSystemFont" color="0xFFFFFFFF" width="250" />
-      <Label id="deckTimeRemaining" text="-00:00:00" translation="[1590, 810]" horizAlign="right" font="font:SmallBoldSystemFont" color="0xAAAAAAFF" width="250" />
+      <Label id="deckTimeElapsed" text="00:00:00" translation="[80, 810]" font="font:SmallBoldSystemFont" color="0xFFFFFFFF" width="220" />
+      <Label id="deckTimeRemaining" text="-00:00:00" translation="[1500, 810]" horizAlign="right" font="font:SmallBoldSystemFont" color="0xAAAAAAFF" width="340" />
 
       <!-- Scrub Track (1760px span) -->
       <Rectangle id="progressTrack" width="1760" height="6" translation="[80, 845]" color="0x262626FF" />
@@ -83,33 +84,43 @@
 
       <!-- Floating Scene Preview Thumbnail Card (Netflix Style) -->
       <Group id="scrubThumbGroup" visible="false">
-        <Rectangle width="280" height="182" translation="[0, 0]" color="0x0A0A0CF8" />
+        <!-- Sleek Card Container -->
+        <Rectangle width="280" height="182" translation="[0, 0]" color="0x0E111AF8" />
         <Rectangle width="280" height="3" translation="[0, 0]" color="0xE50914FF" />
-        <Poster id="scrubThumbPoster" width="280" height="154" translation="[0, 3]" loadDisplayMode="scaleToFit" />
-        <Rectangle width="280" height="25" translation="[0, 157]" color="0x000000EE" />
-        <Label id="scrubThumbTime" text="00:00:00" width="280" height="25" translation="[0, 157]" font="font:SmallBoldSystemFont" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
+        
+        <!-- Elegant Trick-Play Placeholder (displayed when poster is loading or for web streams) -->
+        <Rectangle width="280" height="151" translation="[0, 3]" color="0x131826FA" />
+        <Label text="[ &gt; ]" width="280" height="50" translation="[0, 35]" font="font:MediumBoldSystemFont" horizAlign="center" vertAlign="center" color="0xE50914AA" />
+        <Label text="SCENE PREVIEW" width="280" height="30" translation="[0, 85]" font="font:SmallBoldSystemFont" horizAlign="center" vertAlign="center" color="0x64748BFF" />
+        
+        <!-- Dynamic Thumbnail Image (covers placeholder if thumbnail available) -->
+        <Poster id="scrubThumbPoster" width="280" height="151" translation="[0, 3]" loadDisplayMode="scaleToFit" />
+        
+        <!-- Target Time Badge at bottom of preview card -->
+        <Rectangle width="280" height="28" translation="[0, 154]" color="0x06080DEE" />
+        <Label id="scrubThumbTime" text="00:00:00" width="280" height="28" translation="[0, 154]" font="font:SmallBoldSystemFont" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
       </Group>
 
       <!-- Uniform Netflix Controls Row (Height: 52px) -->
       <!-- Card 0: Play / Pause -->
-      <Rectangle id="card0Bg" width="190" height="52" translation="[80, 885]" color="0xE50914FF" />
-      <Label id="card0Label" text="|| Pause" width="190" height="52" translation="[80, 885]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
+      <Rectangle id="card0Bg" width="180" height="52" translation="[80, 885]" color="0xE50914FF" />
+      <Label id="card0Label" text="|| Pause" width="180" height="52" translation="[80, 885]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
 
       <!-- Card 1: Rewind 10s -->
-      <Rectangle id="card1Bg" width="170" height="52" translation="[290, 885]" color="0x1E1E24CC" />
-      <Label id="card1Label" text="&lt;&lt; 10s" width="170" height="52" translation="[290, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <Rectangle id="card1Bg" width="160" height="52" translation="[280, 885]" color="0x1E1E24CC" />
+      <Label id="card1Label" text="&lt;&lt; 10s" width="160" height="52" translation="[280, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
 
       <!-- Card 2: Forward 10s -->
-      <Rectangle id="card2Bg" width="170" height="52" translation="[480, 885]" color="0x1E1E24CC" />
-      <Label id="card2Label" text="10s &gt;&gt;" width="170" height="52" translation="[480, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <Rectangle id="card2Bg" width="160" height="52" translation="[460, 885]" color="0x1E1E24CC" />
+      <Label id="card2Label" text="10s &gt;&gt;" width="160" height="52" translation="[460, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
 
-      <!-- Card 3: Subtitles & Audio -->
-      <Rectangle id="card3Bg" width="310" height="52" translation="[670, 885]" color="0x1E1E24CC" />
-      <Label id="card3Label" text="[CC] Subtitles &amp; Audio" width="310" height="52" translation="[670, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <!-- Card 3: Subtitles & Audio (Clean label with zero truncation) -->
+      <Rectangle id="card3Bg" width="270" height="52" translation="[640, 885]" color="0x1E1E24CC" />
+      <Label id="card3Label" text="[CC] Audio &amp; Subs" width="270" height="52" translation="[640, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
 
       <!-- Card 4: Next Video -->
-      <Rectangle id="card4Bg" width="220" height="52" translation="[1000, 885]" color="0x1E1E24CC" />
-      <Label id="card4Label" text="Next Video &gt;&gt;|" width="220" height="52" translation="[1000, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <Rectangle id="card4Bg" width="220" height="52" translation="[930, 885]" color="0x1E1E24CC" />
+      <Label id="card4Label" text="Next Video &gt;&gt;|" width="220" height="52" translation="[930, 885]" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
     </Group>
 
     <!-- ============================================================ -->

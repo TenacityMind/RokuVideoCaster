@@ -45,6 +45,7 @@ sub init()
     m.card2Label = m.top.findNode("card2Label")
     m.card3Bg = m.top.findNode("card3Bg")
     m.card3Label = m.top.findNode("card3Label")
+    m.card3Icon = m.top.findNode("card3Icon")
     m.card4Bg = m.top.findNode("card4Bg")
     m.card4Label = m.top.findNode("card4Label")
 
@@ -338,7 +339,7 @@ sub pauseAndShowDeck()
     if m.video = invalid then return
     m.video.control = "pause"
     m.currentState = m.STATE_DECK
-    m.card0Label.text = "> Play"
+    m.card0Label.text = "Play"
 
     m.subtitleGroup.translation = [0, -180]
     m.deckCardIndex = 0
@@ -355,7 +356,7 @@ end sub
 sub showDeckNoPause()
     if m.video = invalid then return
     m.currentState = m.STATE_DECK
-    m.card0Label.text = "|| Pause"
+    m.card0Label.text = "Pause"
 
     m.subtitleGroup.translation = [0, -180]
     m.deckCardIndex = 0
@@ -396,12 +397,12 @@ sub togglePlayback()
     if m.video = invalid then return
     if m.video.state = "playing"
         m.video.control = "pause"
-        m.card0Label.text = "> Play"
+        m.card0Label.text = "Play"
         showToast("Paused")
         m.deckAutoHideTimer.control = "stop"
     else
         m.video.control = "resume"
-        m.card0Label.text = "|| Pause"
+        m.card0Label.text = "Pause"
         showToast("Playing")
         m.deckAutoHideTimer.control = "start"
     end if
@@ -528,7 +529,7 @@ sub seekRelative(seconds as Float)
 
     sign = "+"
     if seconds < 0 then sign = "-"
-    showToast(">> " + sign + Abs(seconds).ToStr() + "s (" + formatTime(newPos) + ")")
+    showToast(sign + Abs(seconds).ToStr() + "s (" + formatTime(newPos) + ")")
 end sub
 
 ' ==============================================================

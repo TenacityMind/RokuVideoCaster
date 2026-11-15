@@ -42,7 +42,7 @@
     <Group id="seekToast" visible="false">
       <Rectangle width="460" height="60" translation="[730, 70]" color="0x050608F4">
         <Rectangle width="4" height="60" translation="[0, 0]" color="0xE50914FF" />
-        <Label id="seekToastLabel" text="&gt;&gt; +10s (00:00:00)" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
+        <Label id="seekToastLabel" text="+10s (00:00:00)" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
       </Rectangle>
     </Group>
     <Timer id="seekToastTimer" repeat="false" duration="1.5" />
@@ -90,8 +90,8 @@
         
         <!-- Elegant Trick-Play Placeholder (displayed when poster is loading or for web streams) -->
         <Rectangle width="280" height="151" translation="[0, 3]" color="0x131826FA" />
-        <Label text="[ &gt; ]" width="280" height="50" translation="[0, 35]" font="font:MediumBoldSystemFont" horizAlign="center" vertAlign="center" color="0xE50914AA" />
-        <Label text="SCENE PREVIEW" width="280" height="30" translation="[0, 85]" font="font:SmallBoldSystemFont" horizAlign="center" vertAlign="center" color="0x64748BFF" />
+        <Label text="PREVIEW" width="280" height="50" translation="[0, 35]" font="font:MediumBoldSystemFont" horizAlign="center" vertAlign="center" color="0xE50914DD" />
+        <Label text="SCENE TIME" width="280" height="30" translation="[0, 85]" font="font:SmallBoldSystemFont" horizAlign="center" vertAlign="center" color="0x64748BFF" />
         
         <!-- Dynamic Thumbnail Image (covers placeholder if thumbnail available) -->
         <Poster id="scrubThumbPoster" width="280" height="151" translation="[0, 3]" loadDisplayMode="scaleToFit" />
@@ -103,24 +103,25 @@
 
       <!-- Uniform Netflix Controls Row (Height: 52px) -->
       <!-- Card 0: Play / Pause -->
-      <Rectangle id="card0Bg" width="180" height="52" translation="[80, 885]" color="0xE50914FF" />
-      <Label id="card0Label" text="|| Pause" width="180" height="52" translation="[80, 885]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
+      <Rectangle id="card0Bg" width="150" height="52" translation="[80, 885]" color="0xE50914FF" />
+      <Label id="card0Label" text="Pause" width="150" height="52" translation="[80, 885]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
 
-      <!-- Card 1: Rewind 10s -->
-      <Rectangle id="card1Bg" width="160" height="52" translation="[280, 885]" color="0x1E1E24CC" />
-      <Label id="card1Label" text="&lt;&lt; 10s" width="160" height="52" translation="[280, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <!-- Card 1: -10 -->
+      <Rectangle id="card1Bg" width="120" height="52" translation="[250, 885]" color="0x1E1E24CC" />
+      <Label id="card1Label" text="-10" width="120" height="52" translation="[250, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
 
-      <!-- Card 2: Forward 10s -->
-      <Rectangle id="card2Bg" width="160" height="52" translation="[460, 885]" color="0x1E1E24CC" />
-      <Label id="card2Label" text="10s &gt;&gt;" width="160" height="52" translation="[460, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <!-- Card 2: +10 -->
+      <Rectangle id="card2Bg" width="120" height="52" translation="[390, 885]" color="0x1E1E24CC" />
+      <Label id="card2Label" text="+10" width="120" height="52" translation="[390, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
 
-      <!-- Card 3: Subtitles & Audio (Clean label with zero truncation) -->
-      <Rectangle id="card3Bg" width="270" height="52" translation="[640, 885]" color="0x1E1E24CC" />
-      <Label id="card3Label" text="[CC] Audio &amp; Subs" width="270" height="52" translation="[640, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <!-- Card 3: Audio & Caption Icon -->
+      <Rectangle id="card3Bg" width="160" height="52" translation="[530, 885]" color="0x1E1E24CC" />
+      <Poster id="card3Icon" uri="pkg:/images/audio_sub.png" width="98" height="28" translation="[561, 897]" loadDisplayMode="scaleToFit" />
+      <Label id="card3Label" text="" width="1" height="1" visible="false" />
 
-      <!-- Card 4: Next Video -->
-      <Rectangle id="card4Bg" width="220" height="52" translation="[930, 885]" color="0x1E1E24CC" />
-      <Label id="card4Label" text="Next Video &gt;&gt;|" width="220" height="52" translation="[930, 885]" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+      <!-- Card 4: Next -->
+      <Rectangle id="card4Bg" width="130" height="52" translation="[710, 885]" color="0x1E1E24CC" />
+      <Label id="card4Label" text="Next" width="130" height="52" translation="[710, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
     </Group>
 
     <!-- ============================================================ -->

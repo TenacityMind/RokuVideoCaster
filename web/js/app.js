@@ -178,6 +178,11 @@ async function onFileSelected(event) {
   document.getElementById("localFileSize").textContent = (file.size / (1024 * 1024)).toFixed(1) + " MB";
   document.getElementById("localMediaCard").classList.remove("hidden");
 
+  const titleInput = document.getElementById("localVideoTitle");
+  if (titleInput && (!titleInput.value || titleInput.value.trim() === "")) {
+    titleInput.value = file.name.replace(/\.[^/.]+$/, "");
+  }
+
   // If local file object has webkitRelativePath or path (in desktop wrapper)
   const filePath = file.path || file.name;
 
@@ -292,6 +297,8 @@ async function castCurrentLocal() {
   }
 
   const audioTrack = parseInt(document.getElementById("audioTrackSelect").value) || 0;
+  const customTitle = document.getElementById("localVideoTitle") ? document.getElementById("localVideoTitle").value.trim() : "";
+  const displayTitle = customTitle || currentLocalFile.name;
 
   try {
     const res = await fetch("/api/cast/local", {
@@ -299,7 +306,7 @@ async function castCurrentLocal() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         file_path: filePath,
-        title: currentLocalFile.name,
+        title: displayTitle,
         audio_track: audioTrack,
         subtitle_token: subToken,
         embedded_sub_index: embeddedIdx,
@@ -307,7 +314,7 @@ async function castCurrentLocal() {
     });
     const data = await res.json();
     if (res.ok) {
-      document.getElementById("dockTitle").textContent = currentLocalFile.name;
+      document.getElementById("dockTitle").textContent = displayTitle;
       document.getElementById("dockMeta").innerHTML = `<span class="px-1.5 py-0.2 rounded bg-slate-800 text-sky-400 font-mono">Playing on TV</span>`;
     } else {
       alert("Cast error: " + (data.error || "Unknown error"));
@@ -320,12 +327,14 @@ async function castCurrentLocal() {
 async function addCurrentLocalToQueue() {
   if (!currentLocalFile) return alert("Please select a video file first");
   const filePath = currentLocalResolvedPath || currentLocalFile.path || currentLocalFile.name;
+  const customTitle = document.getElementById("localVideoTitle") ? document.getElementById("localVideoTitle").value.trim() : "";
+  const displayTitle = customTitle || currentLocalFile.name;
 
   await fetch("/api/playlist/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      title: currentLocalFile.name,
+      title: displayTitle,
       media_url: filePath,
       format: "local",
       duration: currentLocalProbe ? currentLocalProbe.duration_sec : 0,
@@ -362,6 +371,11 @@ async function analyzeWebLink() {
 }
 
 function renderWebAnalysis(data) {
+  const titleField = document.getElementById("webVideoTitle");
+  if (titleField && (data.title || data.Title)) {
+    titleField.value = data.title || data.Title;
+  }
+
   const grid = document.getElementById("webCandidatesGrid");
   const section = document.getElementById("webCandidatesSection");
   grid.innerHTML = "";
@@ -467,7 +481,9 @@ async function castCurrentWeb() {
     subURL = document.getElementById("webScrapedSubSelect").value;
   }
 
-  const title = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
+  const customTitle = document.getElementById("webVideoTitle") ? document.getElementById("webVideoTitle").value.trim() : "";
+  const autoTitle = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
+  const title = customTitle || autoTitle;
 
   // Find captured browser headers for the selected stream so the HLS proxy
   // can forward them to the CDN (Referer, User-Agent, etc.)
@@ -507,7 +523,9 @@ async function addCurrentWebToQueue() {
   if (selectedRadio) streamURL = selectedRadio.value;
   if (!streamURL) return alert("Please enter a stream link first");
 
-  const title = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
+  const customTitle = document.getElementById("webVideoTitle") ? document.getElementById("webVideoTitle").value.trim() : "";
+  const autoTitle = currentWebAnalysis ? (currentWebAnalysis.title || currentWebAnalysis.Title || "Online Stream") : "Online Stream";
+  const title = customTitle || autoTitle;
 
   let streamHeaders = {};
   if (currentWebAnalysis && currentWebAnalysis.candidates) {

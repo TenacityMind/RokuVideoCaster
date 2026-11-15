@@ -161,6 +161,17 @@
 
           </div>
 
+          <!-- Optional Video Title for TV Display -->
+          <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label for="localVideoTitle" class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>🏷️</span> Display Name on TV <span class="text-[10px] text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <span class="text-[10px] text-slate-500 font-mono">Defaults to filename</span>
+            </div>
+            <input type="text" id="localVideoTitle" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500" placeholder="e.g. Interstellar (2014) or Black Clover S02E06">
+          </div>
+
           <!-- Action Buttons -->
           <div class="flex items-center gap-3 pt-2">
             <button onclick="castCurrentLocal()" class="flex-1 py-3 bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-300 hover:to-indigo-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2">
@@ -267,6 +278,17 @@
               Subtitles disabled. The video will cast without caption overlays.
             </div>
 
+          </div>
+
+          <!-- Optional Video Title for TV Display -->
+          <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label for="webVideoTitle" class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>🏷️</span> Display Name on TV <span class="text-[10px] text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <span class="text-[10px] text-slate-500 font-mono">Defaults to web page title</span>
+            </div>
+            <input type="text" id="webVideoTitle" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500" placeholder="e.g. Movie Name or TV Show Episode">
           </div>
 
           <div class="flex items-center gap-3 pt-2">

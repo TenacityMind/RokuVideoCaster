@@ -1,5 +1,5 @@
 BINARY_NAME=roku-caster
-VERSION=2.0.1
+VERSION=2.1.0
 
 .PHONY: all build-mac build-win build-all package-channel clean run
 

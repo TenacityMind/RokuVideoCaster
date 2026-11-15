@@ -32,6 +32,8 @@ type MediaInfo struct {
 	VideoCodec  string        `json:"video_codec"`
 	AudioTracks []StreamTrack `json:"audio_tracks"`
 	SubTracks   []StreamTrack `json:"sub_tracks"`
+	FileToken   string        `json:"file_token,omitempty"`
+	ThumbURL    string        `json:"thumb_url,omitempty"`
 }
 
 type ffprobeOutput struct {

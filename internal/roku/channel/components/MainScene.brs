@@ -16,27 +16,45 @@ sub init()
     m.seekToastLabel = m.top.findNode("seekToastLabel")
     m.seekToastTimer = m.top.findNode("seekToastTimer")
 
+    m.deckAutoHideTimer = m.top.findNode("deckAutoHideTimer")
+
     if m.video.seekMode <> invalid
         m.video.seekMode = "accurate"
     end if
 
-    ' Main Player Deck nodes
+    ' Netflix Header & Deck nodes
+    m.topHeaderGroup = m.top.findNode("topHeaderGroup")
     m.deckGroup = m.top.findNode("deckGroup")
     m.deckTitle = m.top.findNode("deckTitle")
-    m.deckBadge = m.top.findNode("deckBadge")
-    m.deckTime = m.top.findNode("deckTime")
+    m.deckTimeElapsed = m.top.findNode("deckTimeElapsed")
+    m.deckTimeRemaining = m.top.findNode("deckTimeRemaining")
     m.progressBarFill = m.top.findNode("progressBarFill")
     m.progressDot = m.top.findNode("progressDot")
 
+    ' Netflix Floating Scene Preview Card
+    m.scrubThumbGroup = m.top.findNode("scrubThumbGroup")
+    m.scrubThumbPoster = m.top.findNode("scrubThumbPoster")
+    m.scrubThumbTime = m.top.findNode("scrubThumbTime")
+
+    ' 5 Uniform Action Buttons
     m.card0Bg = m.top.findNode("card0Bg")
     m.card0Label = m.top.findNode("card0Label")
     m.card1Bg = m.top.findNode("card1Bg")
     m.card1Label = m.top.findNode("card1Label")
     m.card2Bg = m.top.findNode("card2Bg")
     m.card2Label = m.top.findNode("card2Label")
+    m.card3Bg = m.top.findNode("card3Bg")
+    m.card3Label = m.top.findNode("card3Label")
+    m.card4Bg = m.top.findNode("card4Bg")
+    m.card4Label = m.top.findNode("card4Label")
 
-    ' Subtitle & Audio Side Drawer nodes
+    ' Subtitle & Audio Center Modal nodes
     m.subPanelGroup = m.top.findNode("subPanelGroup")
+    m.audioRow0Bg = m.top.findNode("audioRow0Bg")
+    m.audioRow0Val = m.top.findNode("audioRow0Val")
+    m.audioRow1Bg = m.top.findNode("audioRow1Bg")
+    m.audioRow1Val = m.top.findNode("audioRow1Val")
+
     m.subRow0Bg = m.top.findNode("subRow0Bg")
     m.subRow0Val = m.top.findNode("subRow0Val")
     m.subRow1Bg = m.top.findNode("subRow1Bg")
@@ -47,18 +65,21 @@ sub init()
     m.subRow3Val = m.top.findNode("subRow3Val")
     m.subRow4Bg = m.top.findNode("subRow4Bg")
     m.subRow4Val = m.top.findNode("subRow4Val")
-    m.subRow5Bg = m.top.findNode("subRow5Bg")
-    m.subRow5Val = m.top.findNode("subRow5Val")
 
     ' State machine constants
     m.STATE_PLAYING = 0
     m.STATE_DECK = 1
-    m.STATE_SUB_PANEL = 2
+    m.STATE_MODAL = 2
+    m.STATE_SCRUBBING = 3
     m.currentState = m.STATE_PLAYING
 
     ' Navigation indices
-    m.deckCardIndex = 0 ' 0=Resume, 1=Subtitles, 2=Next Video
-    m.subRowIndex = 0   ' 0..5
+    m.deckCardIndex = 0 ' 0=Play/Pause, 1=Rewind 10s, 2=Forward 10s, 3=Audio & Subs, 4=Next
+    m.subRowIndex = 0   ' 0..4
+
+    ' Scrubbing and thumbnail state
+    m.scrubTargetPos = 0.0
+    m.thumbBaseUrl = ""
 
     ' Subtitle & audio state
     m.cues = []
@@ -82,6 +103,7 @@ sub init()
     m.video.observeField("position", "onPositionChange")
     m.seekToastTimer.observeField("fire", "hideSeekToast")
     m.subtitleTimer.observeField("fire", "updateSubtitleDisplay")
+    m.deckAutoHideTimer.observeField("fire", "onDeckAutoHide")
 
     applySubtitleStyle()
 end sub
@@ -100,17 +122,23 @@ sub onArgs()
     if args.DoesExist("subtitles") and args["subtitles"] <> invalid then subUrl = args["subtitles"]
     if args.DoesExist("sub_url") and args["sub_url"] <> invalid then subUrl = args["sub_url"]
     if args.DoesExist("title") and args["title"] <> invalid then title = args["title"]
-    if args.DoesExist("sub_offset") and args["sub_offset"] <> invalid then offsetStr = args["sub_offset"]
+    if args.DoesExist("offset") and args["offset"] <> invalid then offsetStr = args["offset"].ToStr()
     if args.DoesExist("callback_url") and args["callback_url"] <> invalid then m.callbackUrl = args["callback_url"]
+
+    ' If web_url passed on launch, update the dashboard URL pill
     if args.DoesExist("web_url") and args["web_url"] <> invalid and args["web_url"] <> ""
-        if m.webUrlLabel <> invalid then m.webUrlLabel.text = args["web_url"]
+        m.webUrlLabel.text = args["web_url"]
     end if
 
-    if mediaUrl = "" or mediaUrl = "undefined"
-        m.statusLabel.text = "* READY TO CAST"
-        m.statusLabel.color = "0x34d399FF"
+    if mediaUrl = ""
+        ' No media URL: stay on dashboard
         m.dashboard.visible = true
         m.video.visible = false
+        m.deckGroup.visible = false
+        m.subPanelGroup.visible = false
+        m.topHeaderGroup.visible = false
+        m.statusLabel.text = "* READY TO CAST"
+        m.statusLabel.color = "0x34d399FF"
         return
     end if
 
@@ -120,6 +148,15 @@ sub onArgs()
         m.currentTitle = "NOW PLAYING"
     end if
     m.deckTitle.text = UCase(m.currentTitle.ToStr())
+
+    ' Derive thumbnail base URL for local file streams: /media/<token>/thumb
+    m.thumbBaseUrl = ""
+    if InStr(1, mediaUrl, "/media/") > 0
+        parts = mediaUrl.Split("/")
+        if parts.Count() >= 5
+            m.thumbBaseUrl = parts[0] + "//" + parts[2] + "/media/" + parts[4] + "/thumb"
+        end if
+    end if
 
     if offsetStr <> ""
         m.subOffset = Val(offsetStr)
@@ -134,8 +171,10 @@ sub onArgs()
     m.isShowingSample = false
     m.subtitleGroup.visible = false
     m.subtitleGroup.translation = [0, 0]
+    m.topHeaderGroup.visible = false
     m.deckGroup.visible = false
     m.subPanelGroup.visible = false
+    m.scrubThumbGroup.visible = false
     m.currentState = m.STATE_PLAYING
 
     m.dashboard.visible = false
@@ -225,25 +264,33 @@ sub updateSubtitleDisplay()
 end sub
 
 sub onPositionChange(event as Object)
+    if m.currentState = m.STATE_SCRUBBING then return
+
     vidPos = event.getData()
     dur = m.video.duration
 
     if dur > 0
-        m.deckTime.text = formatTime(vidPos) + " / " + formatTime(dur)
+        m.deckTimeElapsed.text = formatTime(vidPos)
+        remSec = dur - vidPos
+        if remSec < 0 then remSec = 0
+        m.deckTimeRemaining.text = "-" + formatTime(remSec)
+
         ratio = vidPos / dur
         if ratio > 1.0 then ratio = 1.0
         fillWidth = Int(ratio * 1760)
         m.progressBarFill.width = fillWidth
-        m.progressDot.translation = [80 + fillWidth - 8, 851]
+        m.progressDot.translation = [80 + fillWidth - 8, 840]
     else
-        m.deckTime.text = formatTime(vidPos)
+        m.deckTimeElapsed.text = formatTime(vidPos)
+        m.deckTimeRemaining.text = "-00:00:00"
         m.progressBarFill.width = 0
-        m.progressDot.translation = [72, 851]
+        m.progressDot.translation = [72, 840]
     end if
 end sub
 
 function formatTime(totalSeconds as Float) as String
     t = Int(totalSeconds)
+    if t < 0 then t = 0
     hours = Int(t / 3600)
     mins = Int((t Mod 3600) / 60)
     secs = t Mod 60
@@ -282,41 +329,213 @@ sub hideSeekToast()
     if m.seekToast <> invalid then m.seekToast.visible = false
 end sub
 
-sub showDeck()
+' ==============================================================
+' NETFLIX CONTROLS OVERLAY (DECK)
+' ==============================================================
+sub pauseAndShowDeck()
     if m.video = invalid then return
-    m.currentState = m.STATE_DECK
     m.video.control = "pause"
+    m.currentState = m.STATE_DECK
+    m.card0Label.text = "> Play"
 
-    ' Shift subtitles upward slightly while deck is open so subtitles don't overlap
     m.subtitleGroup.translation = [0, -180]
-
     m.deckCardIndex = 0
     updateDeckCards()
 
+    m.topHeaderGroup.visible = true
     m.deckGroup.visible = true
+    m.scrubThumbGroup.visible = false
     m.subPanelGroup.visible = false
+    m.deckAutoHideTimer.control = "stop"
     m.top.setFocus(true)
 end sub
 
-sub resumePlayback()
+sub showDeckNoPause()
     if m.video = invalid then return
-    m.currentState = m.STATE_PLAYING
-    m.deckGroup.visible = false
-    m.subPanelGroup.visible = false
-    m.subtitleGroup.translation = [0, 0]
+    m.currentState = m.STATE_DECK
+    m.card0Label.text = "|| Pause"
 
-    if m.isShowingSample
-        clearSubPreview()
+    m.subtitleGroup.translation = [0, -180]
+    m.deckCardIndex = 0
+    updateDeckCards()
+
+    m.topHeaderGroup.visible = true
+    m.deckGroup.visible = true
+    m.scrubThumbGroup.visible = false
+    m.subPanelGroup.visible = false
+
+    ' If video is playing, start 5s auto-hide timer
+    m.deckAutoHideTimer.control = "stop"
+    if m.video.state = "playing"
+        m.deckAutoHideTimer.control = "start"
     end if
 
-    m.video.control = "resume"
-    showToast("> Playing")
     m.top.setFocus(true)
 end sub
 
-sub openSubPanel()
-    m.currentState = m.STATE_SUB_PANEL
+sub hideDeck()
+    m.currentState = m.STATE_PLAYING
     m.deckGroup.visible = false
+    m.topHeaderGroup.visible = false
+    m.scrubThumbGroup.visible = false
+    m.subPanelGroup.visible = false
+    m.subtitleGroup.translation = [0, 0]
+    m.deckAutoHideTimer.control = "stop"
+    m.top.setFocus(true)
+end sub
+
+sub onDeckAutoHide()
+    if m.currentState = m.STATE_DECK and m.video <> invalid and m.video.state = "playing"
+        hideDeck()
+    end if
+end sub
+
+sub togglePlayback()
+    if m.video = invalid then return
+    if m.video.state = "playing"
+        m.video.control = "pause"
+        m.card0Label.text = "> Play"
+        showToast("Paused")
+        m.deckAutoHideTimer.control = "stop"
+    else
+        m.video.control = "resume"
+        m.card0Label.text = "|| Pause"
+        showToast("Playing")
+        m.deckAutoHideTimer.control = "start"
+    end if
+    updateDeckCards()
+end sub
+
+sub updateDeckCards()
+    bgs = [m.card0Bg, m.card1Bg, m.card2Bg, m.card3Bg, m.card4Bg]
+    lbls = [m.card0Label, m.card1Label, m.card2Label, m.card3Label, m.card4Label]
+
+    for i = 0 to 4
+        if i = m.deckCardIndex
+            bgs[i].color = "0xE50914FF" ' Netflix Red focus
+            lbls[i].color = "0xFFFFFFFF"
+        else
+            bgs[i].color = "0x1E1E24CC" ' Dark idle button
+            lbls[i].color = "0xCCCCCCFF"
+        end if
+    end for
+end sub
+
+sub executeDeckAction(idx as Integer)
+    if idx = 0
+        togglePlayback()
+    else if idx = 1
+        seekRelative(-10)
+    else if idx = 2
+        seekRelative(10)
+    else if idx = 3
+        openSubPanel()
+    else if idx = 4
+        ' Next Video
+        if m.callbackUrl <> ""
+            notifyBackend(m.callbackUrl + "?event=next")
+        else
+            stopPlayback()
+        end if
+    end if
+end sub
+
+' ==============================================================
+' SCENE SLIDER PREVIEW (THUMBNAIL SCRUBBING)
+' ==============================================================
+sub startScrubbing(delta as Float)
+    if m.video = invalid or m.video.duration <= 0 then return
+    m.currentState = m.STATE_SCRUBBING
+    m.scrubTargetPos = m.video.position + delta
+    clampAndRenderScrub()
+
+    m.subtitleGroup.translation = [0, -180]
+    m.deckGroup.visible = true
+    m.topHeaderGroup.visible = true
+    m.scrubThumbGroup.visible = true
+    m.subPanelGroup.visible = false
+    m.deckAutoHideTimer.control = "stop"
+    m.top.setFocus(true)
+end sub
+
+sub adjustScrub(delta as Float)
+    m.scrubTargetPos = m.scrubTargetPos + delta
+    clampAndRenderScrub()
+end sub
+
+sub clampAndRenderScrub()
+    dur = m.video.duration
+    if dur <= 0 then return
+
+    if m.scrubTargetPos < 0 then m.scrubTargetPos = 0
+    if m.scrubTargetPos > dur then m.scrubTargetPos = dur
+
+    ratio = m.scrubTargetPos / dur
+    if ratio > 1.0 then ratio = 1.0
+    fillWidth = Int(ratio * 1760)
+
+    m.progressBarFill.width = fillWidth
+    m.progressDot.translation = [80 + fillWidth - 8, 840]
+
+    m.deckTimeElapsed.text = formatTime(m.scrubTargetPos)
+    remSec = dur - m.scrubTargetPos
+    if remSec < 0 then remSec = 0
+    m.deckTimeRemaining.text = "-" + formatTime(remSec)
+
+    ' Position floating scene thumbnail preview card (280px wide)
+    thumbX = 80 + fillWidth - 140
+    if thumbX < 40 then thumbX = 40
+    if thumbX > 1600 then thumbX = 1600
+    m.scrubThumbGroup.translation = [thumbX, 645]
+
+    m.scrubThumbTime.text = formatTime(m.scrubTargetPos)
+
+    ' Update thumbnail poster if available
+    if m.thumbBaseUrl <> ""
+        m.scrubThumbPoster.uri = m.thumbBaseUrl + "?t=" + Int(m.scrubTargetPos).ToStr()
+    end if
+end sub
+
+sub commitScrubAndPlay()
+    if m.video = invalid then return
+    m.video.seek = m.scrubTargetPos
+    m.scrubThumbGroup.visible = false
+    hideDeck()
+
+    if m.video.state <> "playing"
+        m.video.control = "resume"
+    end if
+
+    showToast("Playing from " + formatTime(m.scrubTargetPos))
+end sub
+
+sub cancelScrub()
+    m.scrubThumbGroup.visible = false
+    hideDeck()
+    showToast("Cancelled")
+end sub
+
+sub seekRelative(seconds as Float)
+    if m.video = invalid or m.video.duration <= 0 then return
+    newPos = m.video.position + seconds
+    if newPos < 0 then newPos = 0
+    if newPos > m.video.duration then newPos = m.video.duration - 1
+    m.video.seek = newPos
+
+    sign = "+"
+    if seconds < 0 then sign = "-"
+    showToast(">> " + sign + Abs(seconds).ToStr() + "s (" + formatTime(newPos) + ")")
+end sub
+
+' ==============================================================
+' SUBTITLE & AUDIO CENTER MODAL
+' ==============================================================
+sub openSubPanel()
+    m.currentState = m.STATE_MODAL
+    m.deckAutoHideTimer.control = "stop"
+    m.deckGroup.visible = false
+    m.topHeaderGroup.visible = false
+    m.scrubThumbGroup.visible = false
     m.subPanelGroup.visible = true
     m.subRowIndex = 0
 
@@ -343,63 +562,17 @@ end sub
 sub closeSubPanel()
     clearSubPreview()
     m.subPanelGroup.visible = false
-    m.currentState = m.STATE_DECK
-    m.deckGroup.visible = true
-    updateDeckCards()
-    m.top.setFocus(true)
-end sub
-
-sub stopPlayback()
-    if m.video <> invalid
-        m.video.control = "stop"
-        m.video.visible = false
-    end if
-    m.deckGroup.visible = false
-    m.subPanelGroup.visible = false
-    m.subtitleGroup.visible = false
     m.subtitleGroup.translation = [0, 0]
-    m.seekToast.visible = false
-    m.subtitleTimer.control = "stop"
-    m.cues = []
-    m.isShowingSample = false
-    m.statusLabel.text = "* READY TO CAST"
-    m.statusLabel.color = "0x34d399FF"
-    m.dashboard.visible = true
-    m.top.setFocus(true)
-end sub
-
-sub updateDeckCards()
-    if m.deckCardIndex = 0
-        m.card0Bg.color = "0x2563EBEE"
-        m.card0Label.color = "0xFFFFFFFF"
-        m.card1Bg.color = "0x1E293BEE"
-        m.card1Label.color = "0x94A3B8FF"
-        m.card2Bg.color = "0x1E293BEE"
-        m.card2Label.color = "0x94A3B8FF"
-    else if m.deckCardIndex = 1
-        m.card0Bg.color = "0x1E293BEE"
-        m.card0Label.color = "0x94A3B8FF"
-        m.card1Bg.color = "0x2563EBEE"
-        m.card1Label.color = "0xFFFFFFFF"
-        m.card2Bg.color = "0x1E293BEE"
-        m.card2Label.color = "0x94A3B8FF"
-    else
-        m.card0Bg.color = "0x1E293BEE"
-        m.card0Label.color = "0x94A3B8FF"
-        m.card1Bg.color = "0x1E293BEE"
-        m.card1Label.color = "0x94A3B8FF"
-        m.card2Bg.color = "0x2563EBEE"
-        m.card2Label.color = "0xFFFFFFFF"
-    end if
+    hideDeck()
 end sub
 
 sub updateSubPanelFocus()
-    bgs = [m.subRow0Bg, m.subRow1Bg, m.subRow2Bg, m.subRow3Bg, m.subRow4Bg, m.subRow5Bg]
-    for i = 0 to 5
+    subBgs = [m.subRow0Bg, m.subRow1Bg, m.subRow2Bg, m.subRow3Bg, m.subRow4Bg]
+    for i = 0 to 4
         if i = m.subRowIndex
-            bgs[i].color = "0x2563EBEE"
+            subBgs[i].color = "0xE50914FF" ' Netflix Red focus
         else
-            bgs[i].color = "0x0F172ACC"
+            subBgs[i].color = "0x15161DCC" ' Dark idle row
         end if
     end for
 end sub
@@ -416,9 +589,9 @@ sub updateSubPanelRows()
     m.subRow3Val.text = "< " + formatOffset(m.subOffset) + " >"
 
     if m.audioTracks.Count() > 0 and m.audioTrackIndex < m.audioTracks.Count()
-        m.subRow4Val.text = "< " + m.audioTracks[m.audioTrackIndex] + " >"
+        m.audioRow0Val.text = m.audioTracks[m.audioTrackIndex] + " *"
     else
-        m.subRow4Val.text = "< Default >"
+        m.audioRow0Val.text = "Track 1: Default *"
     end if
 end sub
 
@@ -448,13 +621,6 @@ sub adjustSetting(rowIndex as Integer, delta as Integer)
             m.subOffset = m.subOffset + 0.5
         else
             m.subOffset = m.subOffset - 0.5
-        end if
-    else if rowIndex = 4
-        if m.audioTracks.Count() > 1
-            m.audioTrackIndex = (m.audioTrackIndex + delta + m.audioTracks.Count()) Mod m.audioTracks.Count()
-            if m.video <> invalid
-                m.video.currentAudioTrack = m.audioTrackIndex
-            end if
         end if
     end if
 
@@ -505,16 +671,26 @@ sub clearSubPreview()
     end if
 end sub
 
-sub seekRelative(seconds as Float)
-    if m.video = invalid or m.video.duration <= 0 then return
-    newPos = m.video.position + seconds
-    if newPos < 0 then newPos = 0
-    if newPos > m.video.duration then newPos = m.video.duration - 1
-    m.video.seek = newPos
-
-    sign = "+"
-    if seconds < 0 then sign = "-"
-    showToast(">> " + sign + Abs(seconds).ToStr() + "s (" + formatTime(newPos) + ")")
+sub stopPlayback()
+    if m.video <> invalid
+        m.video.control = "stop"
+        m.video.visible = false
+    end if
+    m.topHeaderGroup.visible = false
+    m.deckGroup.visible = false
+    m.subPanelGroup.visible = false
+    m.scrubThumbGroup.visible = false
+    m.subtitleGroup.visible = false
+    m.subtitleGroup.translation = [0, 0]
+    m.seekToast.visible = false
+    m.subtitleTimer.control = "stop"
+    m.deckAutoHideTimer.control = "stop"
+    m.cues = []
+    m.isShowingSample = false
+    m.statusLabel.text = "* READY TO CAST"
+    m.statusLabel.color = "0x34d399FF"
+    m.dashboard.visible = true
+    m.top.setFocus(true)
 end sub
 
 sub onVideoStateChange(event as Object)
@@ -546,7 +722,7 @@ sub notifyBackend(url as String)
 end sub
 
 ' ==============================================================
-' REMOTE CONTROL HANDLING
+' REMOTE CONTROL HANDLING (NETFLIX STANDARD)
 ' ==============================================================
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if not press then return false
@@ -554,72 +730,95 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
 
     if m.video <> invalid and m.video.visible = true
 
-        ' STATE 0: VIDEO PLAYING (UI HIDDEN)
+        ' STATE 0: VIDEO PLAYING (CLEAN VIEW)
         if m.currentState = m.STATE_PLAYING
-            if lKey = "right" or lKey = "fastforward" or lKey = "fwd"
-                seekRelative(15)
+            if lKey = "left" or lKey = "rewind" or lKey = "rev"
+                ' Left: Start Scene Slider Preview backward
+                startScrubbing(-15)
                 return true
-            else if lKey = "left" or lKey = "rewind" or lKey = "rev"
-                seekRelative(-15)
+            else if lKey = "right" or lKey = "fastforward" or lKey = "fwd"
+                ' Right: Start Scene Slider Preview forward
+                startScrubbing(15)
                 return true
             else if lKey = "replay" or lKey = "instantreplay"
-                seekRelative(-10)
+                startScrubbing(-10)
                 return true
-            else if lKey = "ok" or lKey = "select" or lKey = "down" or lKey = "up"
-                showDeck()
+            else if lKey = "ok" or lKey = "select"
+                ' OK: Pause video and show options deck
+                pauseAndShowDeck()
+                return true
+            else if lKey = "down"
+                ' Down: Show options deck WITHOUT pausing video
+                showDeckNoPause()
+                return true
+            else if lKey = "up"
+                ' Up: Jump directly into Audio & Subtitles modal
+                openSubPanel()
                 return true
             else if lKey = "play" or lKey = "pause"
-                if m.video.state = "paused"
-                    resumePlayback()
-                else
-                    showDeck()
-                end if
+                togglePlayback()
                 return true
             else if lKey = "back"
                 stopPlayback()
                 return true
             end if
 
-        ' STATE 1: MAIN PLAYER DECK (PAUSED)
-        else if m.currentState = m.STATE_DECK
-            if lKey = "left"
-                m.deckCardIndex = (m.deckCardIndex - 1 + 3) Mod 3
-                updateDeckCards()
+        ' STATE 3: SCENE SLIDER PREVIEW (SCRUBBING)
+        else if m.currentState = m.STATE_SCRUBBING
+            if lKey = "left" or lKey = "rewind" or lKey = "rev"
+                adjustScrub(-15)
                 return true
-            else if lKey = "right"
-                m.deckCardIndex = (m.deckCardIndex + 1) Mod 3
-                updateDeckCards()
+            else if lKey = "right" or lKey = "fastforward" or lKey = "fwd"
+                adjustScrub(15)
                 return true
-            else if lKey = "play"
-                resumePlayback()
-                return true
-            else if lKey = "ok" or lKey = "select"
-                if m.deckCardIndex = 0
-                    resumePlayback()
-                else if m.deckCardIndex = 1
-                    openSubPanel()
-                else if m.deckCardIndex = 2
-                    ' Next Video / Skip
-                    if m.callbackUrl <> ""
-                        notifyBackend(m.callbackUrl + "?event=next")
-                    else
-                        stopPlayback()
-                    end if
-                end if
+            else if lKey = "ok" or lKey = "select" or lKey = "play"
+                ' OK commits seek and starts playback from here!
+                commitScrubAndPlay()
                 return true
             else if lKey = "back"
-                resumePlayback()
+                ' Back cancels scrubbing, returns to playing at original position
+                cancelScrub()
                 return true
             end if
 
-        ' STATE 2: SUBTITLE & AUDIO SIDE DRAWER
-        else if m.currentState = m.STATE_SUB_PANEL
+        ' STATE 1: CONTROLS DECK OVERLAY
+        else if m.currentState = m.STATE_DECK
+            m.deckAutoHideTimer.control = "stop"
+            if m.video.state = "playing" then m.deckAutoHideTimer.control = "start"
+
+            if lKey = "left"
+                m.deckCardIndex = (m.deckCardIndex - 1 + 5) Mod 5
+                updateDeckCards()
+                return true
+            else if lKey = "right"
+                m.deckCardIndex = (m.deckCardIndex + 1) Mod 5
+                updateDeckCards()
+                return true
+            else if lKey = "play" or lKey = "pause"
+                togglePlayback()
+                return true
+            else if lKey = "up"
+                openSubPanel()
+                return true
+            else if lKey = "down"
+                hideDeck()
+                return true
+            else if lKey = "ok" or lKey = "select"
+                executeDeckAction(m.deckCardIndex)
+                return true
+            else if lKey = "back"
+                hideDeck()
+                return true
+            end if
+
+        ' STATE 2: SUBTITLE & AUDIO CENTER MODAL
+        else if m.currentState = m.STATE_MODAL
             if lKey = "up"
-                m.subRowIndex = (m.subRowIndex - 1 + 6) Mod 6
+                m.subRowIndex = (m.subRowIndex - 1 + 5) Mod 5
                 updateSubPanelFocus()
                 return true
             else if lKey = "down"
-                m.subRowIndex = (m.subRowIndex + 1) Mod 6
+                m.subRowIndex = (m.subRowIndex + 1) Mod 5
                 updateSubPanelFocus()
                 return true
             else if lKey = "left"
@@ -637,7 +836,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
                         m.subtitleLabel.text = sampleText
                         m.subtitleShadow.text = sampleText
                     end if
-                else if m.subRowIndex = 5
+                else if m.subRowIndex = 4
                     closeSubPanel()
                 else
                     adjustSetting(m.subRowIndex, 1)

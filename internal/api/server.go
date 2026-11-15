@@ -195,11 +195,14 @@ func (s *Server) handleProbeLocal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resolvedPath := media.ResolveFilePath(req.FilePath)
+	fileToken := s.mediaServer.RegisterFile(resolvedPath)
 	info, err := media.ProbeMediaFile(r.Context(), resolvedPath)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	info.FileToken = fileToken
+	info.ThumbURL = fmt.Sprintf("/media/%s/thumb", fileToken)
 
 	writeJSON(w, http.StatusOK, info)
 }

@@ -38,10 +38,11 @@
       <Label id="subtitleLabel" text="" horizAlign="center" vertAlign="bottom" width="1640" height="180" translation="[140, 830]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" wrap="true" maxLines="3" />
     </Group>
 
-    <!-- Seek Quick Toast (Left/Right remote keys when video is playing) -->
+    <!-- Quick Seek / Status Toast -->
     <Group id="seekToast" visible="false">
-      <Rectangle width="460" height="60" translation="[730, 60]" color="0x090b10F0">
-        <Label id="seekToastLabel" text="&gt;&gt; +15s (00:00)" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" />
+      <Rectangle width="460" height="60" translation="[730, 70]" color="0x050608F4">
+        <Rectangle width="4" height="60" translation="[0, 0]" color="0xE50914FF" />
+        <Label id="seekToastLabel" text="&gt;&gt; +10s (00:00:00)" horizAlign="center" vertAlign="center" width="460" height="60" translation="[0, 0]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
       </Rectangle>
     </Group>
     <Timer id="seekToastTimer" repeat="false" duration="1.5" />
@@ -49,84 +50,120 @@
     <!-- Subtitle position timer (checks every 250ms to update subtitle display) -->
     <Timer id="subtitleTimer" repeat="true" duration="0.25" />
 
+    <!-- Deck auto-hide timer (fades OSD after 5s when video is playing) -->
+    <Timer id="deckAutoHideTimer" repeat="false" duration="5.0" />
+
     <!-- ============================================================ -->
-    <!-- MAIN PLAYER DECK (Shown when Paused)                         -->
+    <!-- TOP HEADER OVERLAY (Netflix Title & Format Tags)             -->
     <!-- ============================================================ -->
-    <Group id="deckGroup" visible="false">
-      <!-- Dark gradient scrim -->
-      <Rectangle width="1920" height="340" translation="[0, 740]" color="0x0b0f19F2" />
-      <Rectangle width="1920" height="2" translation="[0, 740]" color="0x38bdf844" />
-
-      <!-- Title & Time Remaining Badge -->
-      <Label id="deckTitle" text="NOW PLAYING" translation="[80, 765]" font="font:LargeBoldSystemFont" color="0xffffffff" width="1200" />
-      <Label id="deckBadge" text="PAUSED" translation="[80, 815]" font="font:SmallBoldSystemFont" color="0x38bdf8FF" width="200" />
-      <Label id="deckTime" text="00:00 / 00:00" translation="[1440, 815]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" horizAlign="right" width="400" />
-
-      <!-- Scrub / Progress Bar -->
-      <Rectangle width="1760" height="8" translation="[80, 855]" color="0x334155FF" />
-      <Rectangle id="progressBarFill" width="0" height="8" translation="[80, 855]" color="0x38bdf8FF" />
-      <Rectangle id="progressDot" width="16" height="16" translation="[72, 851]" color="0xffffffff" />
-
-      <!-- Deck Action Cards -->
-      <!-- Card 0: Resume -->
-      <Rectangle id="card0Bg" width="360" height="75" translation="[80, 890]" color="0x2563EBEE" />
-      <Label id="card0Label" text="&gt; Resume [OK]" translation="[80, 915]" font="font:MediumBoldSystemFont" color="0xffffffff" width="360" horizAlign="center" />
-
-      <!-- Card 1: Subtitles & Audio -->
-      <Rectangle id="card1Bg" width="440" height="75" translation="[470, 890]" color="0x1e293bEE" />
-      <Label id="card1Label" text="[CC] Subtitles &amp; Audio" translation="[470, 915]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" width="440" horizAlign="center" />
-
-      <!-- Card 2: Next / Stop -->
-      <Rectangle id="card2Bg" width="340" height="75" translation="[940, 890]" color="0x1e293bEE" />
-      <Label id="card2Label" text="&gt;&gt; Next Video" translation="[940, 915]" font="font:MediumBoldSystemFont" color="0x94a3b8FF" width="340" horizAlign="center" />
-
-      <!-- Help hint -->
-      <Label text="Left / Right: Select Card   |   OK: Choose   |   Play: Resume Video   |   Back: Resume" translation="[80, 995]" font="font:SmallSystemFont" color="0x64748bFF" width="1760" />
+    <Group id="topHeaderGroup" visible="false">
+      <Rectangle width="1920" height="160" translation="[0, 0]" color="0x000000CC" />
+      <Label id="deckTitle" text="NOW PLAYING" translation="[80, 50]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="1100" />
+      <Rectangle width="80" height="26" translation="[1200, 58]" color="0x262626EE" />
+      <Label text="4K UHD" width="80" height="26" translation="[1200, 58]" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" />
+      <Rectangle width="55" height="26" translation="[1290, 58]" color="0x262626EE" />
+      <Label text="5.1" width="55" height="26" translation="[1290, 58]" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xCCCCCCFF" />
     </Group>
 
     <!-- ============================================================ -->
-    <!-- SUBTITLE & AUDIO SIDE PANEL DRAWER                           -->
+    <!-- MAIN PLAYER DECK (Netflix Bottom Scrim & Scrub Bar)          -->
+    <!-- ============================================================ -->
+    <Group id="deckGroup" visible="false">
+      <!-- Dark bottom scrim -->
+      <Rectangle width="1920" height="340" translation="[0, 740]" color="0x000000F2" />
+
+      <!-- Elapsed & Remaining Time Display -->
+      <Label id="deckTimeElapsed" text="00:00:00" translation="[80, 810]" font="font:SmallBoldSystemFont" color="0xFFFFFFFF" width="250" />
+      <Label id="deckTimeRemaining" text="-00:00:00" translation="[1590, 810]" horizAlign="right" font="font:SmallBoldSystemFont" color="0xAAAAAAFF" width="250" />
+
+      <!-- Scrub Track (1760px span) -->
+      <Rectangle id="progressTrack" width="1760" height="6" translation="[80, 845]" color="0x262626FF" />
+      <Rectangle id="progressBarFill" width="0" height="6" translation="[80, 845]" color="0xE50914FF" />
+      <Rectangle id="progressDot" width="16" height="16" translation="[72, 840]" color="0xFFFFFFFF" />
+
+      <!-- Floating Scene Preview Thumbnail Card (Netflix Style) -->
+      <Group id="scrubThumbGroup" visible="false">
+        <Rectangle width="280" height="182" translation="[0, 0]" color="0x0A0A0CF8" />
+        <Rectangle width="280" height="3" translation="[0, 0]" color="0xE50914FF" />
+        <Poster id="scrubThumbPoster" width="280" height="154" translation="[0, 3]" loadDisplayMode="scaleToFit" />
+        <Rectangle width="280" height="25" translation="[0, 157]" color="0x000000EE" />
+        <Label id="scrubThumbTime" text="00:00:00" width="280" height="25" translation="[0, 157]" font="font:SmallBoldSystemFont" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
+      </Group>
+
+      <!-- Uniform Netflix Controls Row (Height: 52px) -->
+      <!-- Card 0: Play / Pause -->
+      <Rectangle id="card0Bg" width="190" height="52" translation="[80, 885]" color="0xE50914FF" />
+      <Label id="card0Label" text="|| Pause" width="190" height="52" translation="[80, 885]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" horizAlign="center" vertAlign="center" />
+
+      <!-- Card 1: Rewind 10s -->
+      <Rectangle id="card1Bg" width="170" height="52" translation="[290, 885]" color="0x1E1E24CC" />
+      <Label id="card1Label" text="&lt;&lt; 10s" width="170" height="52" translation="[290, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+
+      <!-- Card 2: Forward 10s -->
+      <Rectangle id="card2Bg" width="170" height="52" translation="[480, 885]" color="0x1E1E24CC" />
+      <Label id="card2Label" text="10s &gt;&gt;" width="170" height="52" translation="[480, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+
+      <!-- Card 3: Subtitles & Audio -->
+      <Rectangle id="card3Bg" width="310" height="52" translation="[670, 885]" color="0x1E1E24CC" />
+      <Label id="card3Label" text="[CC] Subtitles &amp; Audio" width="310" height="52" translation="[670, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+
+      <!-- Card 4: Next Video -->
+      <Rectangle id="card4Bg" width="220" height="52" translation="[1000, 885]" color="0x1E1E24CC" />
+      <Label id="card4Label" text="Next Video &gt;&gt;|" width="220" height="52" translation="[1000, 885]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" horizAlign="center" vertAlign="center" />
+    </Group>
+
+    <!-- ============================================================ -->
+    <!-- SUBTITLE & AUDIO CENTER MODAL (Netflix Dual Column)          -->
     <!-- ============================================================ -->
     <Group id="subPanelGroup" visible="false">
-      <!-- Dark backdrop on right side -->
-      <Rectangle width="560" height="1080" translation="[1360, 0]" color="0x0a0f1dFA" />
-      <Rectangle width="3" height="1080" translation="[1360, 0]" color="0x38bdf888" />
+      <!-- Fullscreen Dimmer -->
+      <Rectangle width="1920" height="1080" color="0x000000B8" />
 
-      <!-- Panel Title -->
-      <Label text="SUBTITLES &amp; AUDIO" translation="[1400, 50]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" width="480" />
-      <Rectangle width="480" height="1" translation="[1400, 95]" color="0x334155FF" />
+      <!-- Centered Modal Card -->
+      <Rectangle width="1160" height="660" translation="[380, 210]" color="0x08090CFE" />
+      <Rectangle width="1160" height="3" translation="[380, 210]" color="0xE50914FF" />
 
-      <!-- Row 0: Subtitle Track -->
-      <Rectangle id="subRow0Bg" width="480" height="75" translation="[1400, 115]" color="0x2563EBEE" />
-      <Label text="Subtitle Track" translation="[1420, 123]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
-      <Label id="subRow0Val" text="&lt; English [CC] &gt;" translation="[1420, 150]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+      <!-- Modal Title -->
+      <Label text="AUDIO &amp; SUBTITLES" translation="[420, 235]" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" width="600" />
+      <Rectangle width="1080" height="1" translation="[420, 280]" color="0x262626FF" />
 
-      <!-- Row 1: Subtitle Size -->
-      <Rectangle id="subRow1Bg" width="480" height="75" translation="[1400, 205]" color="0x0f172aEE" />
-      <Label text="Subtitle Size" translation="[1420, 213]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
-      <Label id="subRow1Val" text="&lt; Large (42pt) &gt;" translation="[1420, 240]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+      <!-- Vertical Column Divider -->
+      <Rectangle width="1" height="540" translation="[930, 280]" color="0x262626FF" />
 
-      <!-- Row 2: Text Color -->
-      <Rectangle id="subRow2Bg" width="480" height="75" translation="[1400, 295]" color="0x0f172aEE" />
-      <Label text="Font Color" translation="[1420, 303]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
-      <Label id="subRow2Val" text="&lt; White &gt;" translation="[1420, 330]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+      <!-- LEFT COLUMN: AUDIO STREAMS -->
+      <Label text="AUDIO" translation="[420, 305]" font="font:SmallBoldSystemFont" color="0x888888FF" width="480" />
+      <Rectangle id="audioRow0Bg" width="480" height="60" translation="[420, 340]" color="0xE5091424" />
+      <Label id="audioRow0Val" text="Track 1: Default *" translation="[440, 357]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" width="440" />
 
-      <!-- Row 3: Sync Timing -->
-      <Rectangle id="subRow3Bg" width="480" height="75" translation="[1400, 385]" color="0x0f172aEE" />
-      <Label text="Subtitle Sync (Left/Right nudges, OK resets)" translation="[1420, 393]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
-      <Label id="subRow3Val" text="&lt; 0.0s (In Sync) &gt;" translation="[1420, 420]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+      <Rectangle id="audioRow1Bg" width="480" height="60" translation="[420, 415]" color="0x15161DCC" />
+      <Label id="audioRow1Val" text="Track 2: Alternate" translation="[440, 432]" font="font:MediumBoldSystemFont" color="0x888888FF" width="440" />
 
-      <!-- Row 4: Audio Track -->
-      <Rectangle id="subRow4Bg" width="480" height="75" translation="[1400, 475]" color="0x0f172aEE" />
-      <Label text="Audio Track" translation="[1420, 483]" font="font:SmallBoldSystemFont" color="0x94a3b8FF" width="440" />
-      <Label id="subRow4Val" text="&lt; Track 1: Default &gt;" translation="[1420, 510]" font="font:MediumBoldSystemFont" color="0xffffffff" width="440" />
+      <!-- RIGHT COLUMN: SUBTITLE SETTINGS -->
+      <Label text="SUBTITLES" translation="[960, 305]" font="font:SmallBoldSystemFont" color="0x888888FF" width="540" />
 
-      <!-- Row 5: Done Button -->
-      <Rectangle id="subRow5Bg" width="480" height="60" translation="[1400, 565]" color="0x0f172aEE" />
-      <Label id="subRow5Val" text="[ Done &amp; Close (OK) ]" translation="[1400, 582]" font="font:MediumBoldSystemFont" color="0x38bdf8FF" width="480" horizAlign="center" />
+      <!-- Sub Row 0: Language Track -->
+      <Rectangle id="subRow0Bg" width="540" height="65" translation="[960, 340]" color="0xE50914FF" />
+      <Label text="Language" translation="[980, 347]" font="font:SmallBoldSystemFont" color="0xDDDDDDFF" width="500" />
+      <Label id="subRow0Val" text="&lt; English [CC] &gt;" translation="[980, 372]" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" width="500" />
 
-      <!-- Drawer Help Legend -->
-      <Label text="Up / Down: Choose Setting&#xA;Left / Right: Change Value&#xA;OK on Sync: Reset to 0.0s&#xA;Back / OK on Done: Return to Player" translation="[1400, 660]" font="font:SmallSystemFont" color="0x64748bFF" width="480" wrap="true" />
+      <!-- Sub Row 1: Font Size -->
+      <Rectangle id="subRow1Bg" width="540" height="65" translation="[960, 420]" color="0x15161DCC" />
+      <Label text="Font Size" translation="[980, 427]" font="font:SmallBoldSystemFont" color="0x888888FF" width="500" />
+      <Label id="subRow1Val" text="&lt; Large (42pt) &gt;" translation="[980, 452]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" width="500" />
+
+      <!-- Sub Row 2: Font Color -->
+      <Rectangle id="subRow2Bg" width="540" height="65" translation="[960, 500]" color="0x15161DCC" />
+      <Label text="Font Color" translation="[980, 507]" font="font:SmallBoldSystemFont" color="0x888888FF" width="500" />
+      <Label id="subRow2Val" text="&lt; White &gt;" translation="[980, 532]" font="font:MediumBoldSystemFont" color="0xCCCCCCFF" width="500" />
+
+      <!-- Sub Row 3: Timing Sync -->
+      <Rectangle id="subRow3Bg" width="540" height="65" translation="[960, 580]" color="0x15161DCC" />
+      <Label text="Sync Timing (Left/Right nudges, OK resets)" translation="[980, 587]" font="font:SmallBoldSystemFont" color="0x888888FF" width="500" />
+      <Label id="subRow3Val" text="&lt; 0.0s (In Sync) &gt;" translation="[980, 612]" font="font:MediumBoldSystemFont" color="0x34D399FF" width="500" />
+
+      <!-- Sub Row 4: Done / Close Button -->
+      <Rectangle id="subRow4Bg" width="540" height="52" translation="[960, 660]" color="0x15161DCC" />
+      <Label id="subRow4Val" text="Done &amp; Resume Playback" translation="[960, 660]" width="540" height="52" horizAlign="center" vertAlign="center" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
     </Group>
   </children>
   <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />

@@ -29,17 +29,20 @@ Cast personal local movies and online videos directly to your Roku TV with zero 
   - Paste streaming links or video pages (e.g. `primeshows.org`, `flixer.su`, `flixer.gd`).
   - Automated headless Chrome engine navigates iframes, bypasses Cloudflare Turnstile, and intercepts direct `.m3u8` master and variant playlists.
   - Robust false-positive filtering prevents web manifest stalls and suppresses raw CMAF segment clutter.
-- **🎮 Redesigned Cinematic TV Media Player:**
-  - **Discrete Seek vs. Menu Modes:** While playing, `Left`/`Right` directly skips backward/forward by 15s with a quick unobtrusive toast—no menus block your view.
-  - **Main Player Deck (Remote `OK` Key):** Pauses video and shows progress bar, elapsed/total time, and 3 focused action cards: `[ > Resume ]`, `[ [CC] Subtitles & Audio ]`, and `[ >> Next Video ]`.
-  - **Dedicated Subtitle & Audio Drawer:** Sleek side panel with 6 easy vertical rows:
-    - **Subtitle Track:** Toggle tracks (`English [CC]` / `OFF`).
-    - **Subtitle Size:** Switch between `Normal (30pt)`, `Large (42pt - default)`, and `Huge (54pt)`.
-    - **Font Color:** Choose between `White`, `Yellow`, or `Sky Blue`.
-    - **Sync Timing:** Nudge timing by `±0.5s` with real-time zero-buffering response (`OK` resets to `0.0s`).
-    - **Audio Track:** Toggle between available embedded audio streams.
-    - **Live On-Screen Preview:** See your chosen font size and color live on screen before resuming playback!
-  - **Pure ASCII UI:** 100% ASCII indicators (`*`, `-`, `[CC]`, `[>]`, `<  >`) eliminate missing rectangular glyph boxes across all Roku OS system fonts.
+- **🎮 Netflix-Style Cinematic TV Player UI & Remote Controls:**
+  - **🎞️ Scene Slider Preview (Trick Play Thumbnails):** Pressing or holding `Left` or `Right` glides a floating 16:9 thumbnail preview card along the red timeline showing the scene and timestamp. Playback is not interrupted until you press `OK` to commit the seek!
+  - **Instant 140ms Hardware Extraction & In-Memory Caching:** Dynamic thumbnail generation powered by `ffmpeg` on your host machine, serving cached frames in `10ms`.
+  - **Uniform Netflix Action Deck:** Clean, equal-height action buttons: `[|| Pause / > Play]`, `[<< 10s]`, `[10s >>]`, `[[CC] Subtitles & Audio]`, and `[Next Video >>|]`.
+  - **Netflix Remote Control Key Behavior:**
+    - `OK` while playing: Pauses video and displays options deck.
+    - `Down` while playing: Shows controls deck without pausing video (plays in background).
+    - `Up`: Direct one-click jump into Subtitles & Audio modal.
+    - `Back`: Stepwise dismiss (Slider Preview -> Options Deck -> TV Home Screen).
+    - `5-Second Auto-Hide`: OSD automatically fades out after 5s of inactivity when playing.
+  - **Netflix Centered Dual-Column Subtitles & Audio Modal:**
+    - Left Column: Audio stream switcher (`English 5.1`, `Stereo`, etc.) with active checkmark.
+    - Right Column: Subtitle tracks, sizing (`Normal / Large / Huge`), colors (`White / Yellow / Sky Blue`), and `±0.5s` sync nudging.
+  - **Pure ASCII UI:** 100% ASCII indicators eliminate missing rectangular glyph boxes across all Roku OS system fonts.
 - **🏠 Cinematic TV Home Screen / Dashboard:**
   - Displays a clean emerald green `* READY TO CAST` status on startup.
   - Features a high-contrast glowing pill displaying your computer's actual local network IP (e.g. `http://10.0.0.70:8080`) so you can open the dashboard instantly on your phone, tablet, or laptop.

@@ -1,5 +1,6 @@
 # 📺 Roku Video Caster (V2.0 PRO)
 
+[![Release](https://img.shields.io/badge/Release-v2.0.1-brightgreen.svg)](https://github.com/TenacityMind/RokuVideoCaster/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go)](https://golang.org)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Android-lightgrey.svg)]()
@@ -15,15 +16,19 @@ Cast personal local movies and online videos directly to your Roku TV with zero 
 
 - **📺 Roku TV Exclusive:** Zero DLNA or Chromecast overhead. Built specifically for Roku OS using the native SceneGraph framework.
 - **⚡ Hardware Direct Passthrough:** Direct hardware streaming for 4K UHD, HDR, and Dolby Atmos/5.1 surround sound without local transcoding.
+- **🛡️ Built-in Transparent HLS Proxy:**
+  - Circumvents CDN anti-hotlink protection (`403 Forbidden` / Referer checking) on online streaming hosts (e.g. `flixer.gd`, `flixer.su`).
+  - Seamlessly tunnels browser-captured `Referer` and `User-Agent` headers upstream for every segment.
+  - Rewrites both master and sub-playlist manifests in real time, converting relative URLs and CMAF fMP4 (`.m4s` + `#EXT-X-MAP`) chunks into fully playable local streams for Roku TV.
 - **📁 Intelligent Local File Streaming:**
   - Drop or pick any video file (`.mp4`, `.mkv`, `.m4v`, `.mov`) in the Web UI.
   - **Smart Disk Discovery:** Automatically locates files in your user folders (`~/Downloads`, `~/Movies`, `~/Desktop`, `~/Videos`) even when standard browser sandboxes omit absolute file paths.
   - **Full Byte-Range Seeking:** HTTP `206 Partial Content` streaming enables immediate scrubbing and instant seek on Roku's native hardware decoder.
   - Inspects resolution, duration, audio tracks, and embedded subtitles via `ffprobe`.
 - **🌐 Headless Chrome Stream Scraper:**
-  - Paste streaming links or video pages (e.g. `primeshows.org`, `flixer.su`).
+  - Paste streaming links or video pages (e.g. `primeshows.org`, `flixer.su`, `flixer.gd`).
   - Automated headless Chrome engine navigates iframes, bypasses Cloudflare Turnstile, and intercepts direct `.m3u8` master and variant playlists.
-  - Robust false-positive filtering prevents web manifest stalls.
+  - Robust false-positive filtering prevents web manifest stalls and suppresses raw CMAF segment clutter.
 - **🎮 Redesigned Cinematic TV Media Player:**
   - **Discrete Seek vs. Menu Modes:** While playing, `Left`/`Right` directly skips backward/forward by 15s with a quick unobtrusive toast—no menus block your view.
   - **Main Player Deck (Remote `OK` Key):** Pauses video and shows progress bar, elapsed/total time, and 3 focused action cards: `[ > Resume ]`, `[ [CC] Subtitles & Audio ]`, and `[ >> Next Video ]`.

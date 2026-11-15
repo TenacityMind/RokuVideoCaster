@@ -388,6 +388,9 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 	callbackURL := fmt.Sprintf("http://%s:%d/api/roku/event", localIP, port)
 	webURL := fmt.Sprintf("http://%s:%d", localIP, port)
 
+	webToken := s.mediaServer.RegisterWebStream(req.StreamURL, req.Headers)
+	thumbURL := fmt.Sprintf("http://%s:%d/media/%s/thumb", localIP, port, webToken)
+
 	// For HLS/DASH streams, route through the local HLS proxy so Roku fetches
 	// from us — we add the correct Referer/User-Agent headers the CDN needs,
 	// and we rewrite relative segment URLs to absolute proxied URLs.
@@ -404,6 +407,7 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 		SubOffset:   req.SubOffset,
 		CallbackURL: callbackURL,
 		WebURL:      webURL,
+		ThumbURL:    thumbURL,
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -415,6 +419,7 @@ func (s *Server) handleCastWeb(w http.ResponseWriter, r *http.Request) {
 		"media_url": castURL,
 		"sub_url":   subURL,
 		"title":     title,
+		"thumb_url": thumbURL,
 	})
 }
 

@@ -10,12 +10,14 @@ package proxy
 
 import (
 	"bufio"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -241,3 +243,74 @@ func NeedsProxy(streamURL string) bool {
 func ProxyBaseURL(localIP string, port int) string {
 	return fmt.Sprintf("http://%s:%d", localIP, port)
 }
+
+// ResolveHLSVideoPlaylist inspects an upstream HLS playlist URL.
+// If it is a master playlist containing #EXT-X-STREAM-INF, it parses and returns
+// the URL of the highest bandwidth (or first) video variant playlist.
+// Otherwise, it returns the original URL.
+func ResolveHLSVideoPlaylist(ctx context.Context, playlistURL string, headers map[string]string) (string, error) {
+	if !IsHLSURL(playlistURL) {
+		return playlistURL, nil
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, playlistURL, nil)
+	if err != nil {
+		return playlistURL, err
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return playlistURL, err
+	}
+	defer resp.Body.Close()
+
+	baseURL, _ := url.Parse(playlistURL)
+	scanner := bufio.NewScanner(resp.Body)
+	var bestVariantURL string
+	var maxBandwidth int64
+	isMaster := false
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "#EXT-X-STREAM-INF:") {
+			isMaster = true
+			var bw int64
+			if idx := strings.Index(line, "BANDWIDTH="); idx != -1 {
+				valStr := line[idx+10:]
+				if comma := strings.Index(valStr, ","); comma != -1 {
+					valStr = valStr[:comma]
+				}
+				bw, _ = strconv.ParseInt(valStr, 10, 64)
+			}
+			for scanner.Scan() {
+				variantLine := strings.TrimSpace(scanner.Text())
+				if variantLine == "" || strings.HasPrefix(variantLine, "#") {
+					continue
+				}
+				if bestVariantURL == "" || bw > maxBandwidth {
+					maxBandwidth = bw
+					bestVariantURL = variantLine
+				}
+				break
+			}
+		}
+	}
+
+	if isMaster && bestVariantURL != "" {
+		u, err := url.Parse(bestVariantURL)
+		if err == nil && baseURL != nil {
+			return baseURL.ResolveReference(u).String(), nil
+		}
+		return bestVariantURL, nil
+	}
+
+	return playlistURL, nil
+}
+
